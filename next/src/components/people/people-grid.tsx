@@ -324,7 +324,7 @@ export function PeopleGrid({ people }: PeopleGridProps) {
                   }
                 }}
                 className={cn(
-                  "relative flex w-full items-start gap-3 rounded-lg border border-border bg-card p-3 pb-10 text-left transition-colors hover:bg-accent/40",
+                  "relative flex w-full items-start gap-3 rounded-lg border border-border bg-card p-3 text-left transition-colors hover:bg-accent/40",
                   active && "border-ring bg-accent/30 ring-1 ring-ring/40",
                 )}
               >

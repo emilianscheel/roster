@@ -252,7 +252,7 @@ export function KnowledgeBestPractices({
             return (
               <article
                 key={s.id}
-                className="relative rounded-lg border border-border p-4 pb-12"
+                className="relative rounded-lg border border-border p-4"
               >
                 <div className="flex items-center justify-between gap-2">
                   <h2 className="font-medium">{s.title}</h2>
