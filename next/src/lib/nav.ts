@@ -8,7 +8,6 @@ import {
   Swords,
   Wallet,
   BookOpen,
-  MessageSquare,
   FileText,
   Radio,
   Columns3,
@@ -20,7 +19,6 @@ import {
 export type NavItemId =
   | "home"
   | "new"
-  | "sessions"
   | "roles"
   | "people"
   | "approvals"
@@ -46,7 +44,6 @@ export type NavItem = {
 export const globalNav: NavItem[] = [
   { id: "home", title: "What to do?", href: "/", icon: LayoutDashboard },
   { id: "new", title: "New", href: "/new", icon: Plus },
-  { id: "sessions", title: "Sessions", href: "/sessions", icon: MessageSquare },
   { id: "roles", title: "Roles", href: "/roles", icon: Briefcase },
   { id: "people", title: "People", href: "/people", icon: Users },
   { id: "approvals", title: "Approvals", href: "/approvals", icon: ShieldCheck },

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
-import { ChevronLeft, LogOut } from "lucide-react";
+import { ChevronLeft, LogOut, Search } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -22,6 +22,8 @@ import type { NavStats } from "@/lib/nav-stats";
 import { loadRoleNavStats } from "@/lib/nav-stats-actions";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
+import { Kbd, KbdGroup } from "@/components/ui/kbd";
+import { useCommandMenu } from "@/components/command-menu";
 
 type AppSidebarProps = {
   globalStats: NavStats;
@@ -33,6 +35,7 @@ export function AppSidebar({ globalStats }: AppSidebarProps) {
   const roleId = roleMatch?.[1];
   const panel = roleId ? "role" : "global";
   const items = roleId ? roleNav(roleId) : globalNav;
+  const { setOpen } = useCommandMenu();
 
   const prevRoleIdRef = useRef<string | undefined>(roleId);
   let direction = 0;
@@ -44,6 +47,11 @@ export function AppSidebar({ globalStats }: AppSidebarProps) {
   }, [roleId]);
 
   const [roleStats, setRoleStats] = useState<NavStats>({});
+  const [isMac, setIsMac] = useState(true);
+
+  useEffect(() => {
+    setIsMac(/Mac|iPhone|iPad|iPod/.test(navigator.platform));
+  }, []);
 
   useEffect(() => {
     if (!roleId) {
@@ -110,6 +118,28 @@ export function AppSidebar({ globalStats }: AppSidebarProps) {
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   ) : null}
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      tooltip="Search"
+                      onClick={() => setOpen(true)}
+                    >
+                      <Search />
+                      <span>Search</span>
+                      <KbdGroup className="ml-auto">
+                        {isMac ? (
+                          <>
+                            <Kbd>⌘</Kbd>
+                            <Kbd>K</Kbd>
+                          </>
+                        ) : (
+                          <>
+                            <Kbd>Ctrl</Kbd>
+                            <Kbd>K</Kbd>
+                          </>
+                        )}
+                      </KbdGroup>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
                   {items.map((item) => (
                     <NavMenuItem
                       key={item.href}

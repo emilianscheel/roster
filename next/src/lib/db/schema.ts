@@ -457,41 +457,6 @@ export const knowledgeSnippets = pgTable(
   (t) => [index("knowledge_org_idx").on(t.organizationId)],
 );
 
-export const agentSessions = pgTable(
-  "agent_sessions",
-  {
-    id: text("id").primaryKey(),
-    organizationId: text("organization_id")
-      .notNull()
-      .references(() => organizations.id, { onDelete: "cascade" }),
-    userId: text("user_id")
-      .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
-    roleId: text("role_id").references(() => roles.id, { onDelete: "set null" }),
-    kind: text("kind").notNull(), // recruiting | coding
-    title: text("title").notNull().default("Session"),
-    sandboxName: text("sandbox_name"),
-    createdAt: timestamp("created_at").notNull().defaultNow(),
-    updatedAt: timestamp("updated_at").notNull().defaultNow(),
-  },
-  (t) => [index("agent_sessions_org_idx").on(t.organizationId)],
-);
-
-export const agentMessages = pgTable(
-  "agent_messages",
-  {
-    id: text("id").primaryKey(),
-    sessionId: text("session_id")
-      .notNull()
-      .references(() => agentSessions.id, { onDelete: "cascade" }),
-    role: text("role").notNull(),
-    content: text("content").notNull(),
-    parts: jsonb("parts").$type<unknown>(),
-    createdAt: timestamp("created_at").notNull().defaultNow(),
-  },
-  (t) => [index("agent_messages_session_idx").on(t.sessionId)],
-);
-
 // Relations (minimal)
 
 export const rolesRelations = relations(roles, ({ many }) => ({

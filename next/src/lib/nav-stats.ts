@@ -1,7 +1,6 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
-  agentSessions,
   approvalTasks,
   candidates,
   evidence,
@@ -26,7 +25,6 @@ function formatCents(cents: number): string {
 export async function getGlobalNavStats(orgId: string): Promise<NavStats> {
   const [
     [pending],
-    [sessionCount],
     [roleCount],
     [peopleCount],
     [arenaCount],
@@ -42,10 +40,6 @@ export async function getGlobalNavStats(orgId: string): Promise<NavStats> {
           eq(approvalTasks.status, "pending"),
         ),
       ),
-    db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(agentSessions)
-      .where(eq(agentSessions.organizationId, orgId)),
     db
       .select({ count: sql<number>`count(*)::int` })
       .from(roles)
@@ -74,7 +68,6 @@ export async function getGlobalNavStats(orgId: string): Promise<NavStats> {
 
   return {
     home: String(pendingCount),
-    sessions: String(sessionCount?.count ?? 0),
     roles: String(roleCount?.count ?? 0),
     people: String(peopleCount?.count ?? 0),
     approvals: String(pendingCount),
