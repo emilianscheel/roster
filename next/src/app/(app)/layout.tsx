@@ -1,17 +1,19 @@
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { requireSession } from "@/lib/auth/session";
+import { getGlobalNavStats } from "@/lib/nav-stats";
 
 export default async function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  await requireSession();
+  const { orgId } = await requireSession();
+  const globalStats = await getGlobalNavStats(orgId);
 
   return (
     <SidebarProvider className="min-h-svh">
-      <AppSidebar />
+      <AppSidebar globalStats={globalStats} />
       <SidebarInset className="min-h-svh">
         <div className="flex min-h-svh flex-1 flex-col p-4 md:p-6">{children}</div>
       </SidebarInset>
