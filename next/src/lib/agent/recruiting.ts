@@ -679,6 +679,28 @@ export function createRecruitingTools(ctx: RecruitingContext) {
       }),
       execute: async (input) => distillKnowledge(ctx, input),
     }),
+
+    callZeroService: tool({
+      description:
+        "Call any Zero service/capability (search, enrich, github, contact unlock, outreach). Action capabilities that send or unlock create HITL approvals and do not execute.",
+      inputSchema: z.object({
+        service: z.string(),
+        capability: z.string(),
+        purpose: z.string(),
+        query: z.string().optional(),
+        candidateId: z.string().optional(),
+      }),
+      execute: async ({ service, capability, purpose, query, candidateId }) =>
+        zeroCall({
+          organizationId: ctx.organizationId,
+          roleId: ctx.roleId,
+          candidateId: candidateId ?? null,
+          service,
+          capability,
+          purpose,
+          query,
+        }),
+    }),
   };
 }
 

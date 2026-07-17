@@ -143,6 +143,13 @@ export const perspectiveKindEnum = pgEnum("perspective_kind", [
   "market",
 ]);
 
+export type RoleChatMessage = {
+  id: string;
+  role: "system" | "user" | "assistant";
+  parts: unknown[];
+  metadata?: unknown;
+};
+
 export const roles = pgTable(
   "roles",
   {
@@ -167,6 +174,8 @@ export const roles = pgTable(
       .default(100),
     maxToolCallCents: integer("max_tool_call_cents").notNull().default(50),
     spentCents: integer("spent_cents").notNull().default(0),
+    /** Persisted Take action chat transcript (AI SDK UIMessage shape). */
+    chatMessages: jsonb("chat_messages").$type<RoleChatMessage[]>().default([]),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },

@@ -6,5 +6,5 @@ export default async function RoleIndex({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  redirect(`/roles/${id}/live`);
+  redirect(`/roles/${id}/take-action`);
 }

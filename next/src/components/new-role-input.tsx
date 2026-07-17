@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { ArrowUp, Code2, Loader2, Search, Users } from "lucide-react";
+import { PromptComposer } from "@/components/prompt-composer";
+import { Code2, Search, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 const EXAMPLES: {
@@ -48,14 +47,14 @@ export function NewRoleInput() {
       const res = await fetch("/api/roles", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ brief: text, start: true }),
+        body: JSON.stringify({ brief: text, start: false }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || "Failed to create role");
       }
       const data = (await res.json()) as { id: string };
-      router.push(`/roles/${data.id}/live`);
+      router.push(`/roles/${data.id}/take-action`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed");
       setBusy(false);
@@ -64,38 +63,15 @@ export function NewRoleInput() {
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-4 px-4">
-      <div className="relative w-full">
-        <Textarea
-          value={brief}
-          onChange={(e) => setBrief(e.target.value)}
-          placeholder="Find a founding infrastructure engineer with production Rust and Kubernetes…"
-          className="min-h-40 resize-none rounded-xl pb-12 pr-14 text-base"
-          disabled={busy}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-              e.preventDefault();
-              void submit();
-            }
-          }}
-        />
-        <div className="absolute right-2 bottom-2">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="size-8 rounded-full"
-            disabled={busy || !brief.trim()}
-            onClick={() => submit()}
-            aria-label="Start"
-          >
-            {busy ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <ArrowUp className="size-4" />
-            )}
-          </Button>
-        </div>
-      </div>
+      <PromptComposer
+        value={brief}
+        onChange={setBrief}
+        onSubmit={() => void submit()}
+        placeholder="Find a founding infrastructure engineer with production Rust and Kubernetes…"
+        busy={busy}
+        size="hero"
+        submitOnEnter={false}
+      />
 
       <div className="flex w-full flex-col items-stretch gap-2.5 pt-4">
         {EXAMPLES.map((ex) => (

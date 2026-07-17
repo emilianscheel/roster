@@ -16,6 +16,7 @@ import {
   Trophy,
   Wrench,
   Rocket,
+  Zap,
 } from "lucide-react";
 
 export type NavItemId =
@@ -29,6 +30,7 @@ export type NavItemId =
   | "arena"
   | "spend"
   | "knowledge"
+  | "take-action"
   | "brief"
   | "live"
   | "pipeline"
@@ -61,6 +63,7 @@ export const globalNav: NavItem[] = [
 export function roleNav(roleId: string): NavItem[] {
   const base = `/roles/${roleId}`;
   return [
+    { id: "take-action", title: "Take action", href: `${base}/take-action`, icon: Zap },
     { id: "brief", title: "Brief", href: `${base}/brief`, icon: FileText },
     { id: "live", title: "Live", href: `${base}/live`, icon: Radio },
     { id: "pipeline", title: "Pipeline", href: `${base}/pipeline`, icon: Columns3 },
