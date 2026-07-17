@@ -129,6 +129,20 @@ export const roleStatusEnum = pgEnum("role_status", [
   "closed",
 ]);
 
+export const requirementPriorityEnum = pgEnum("requirement_priority", [
+  "must-have",
+  "preferred",
+  "exclusion",
+]);
+
+export const perspectiveKindEnum = pgEnum("perspective_kind", [
+  "company",
+  "team",
+  "hiring_manager",
+  "candidate",
+  "market",
+]);
+
 export const roles = pgTable(
   "roles",
   {
@@ -141,7 +155,11 @@ export const roles = pgTable(
       .references(() => user.id),
     title: text("title").notNull().default("Untitled role"),
     brief: text("brief").notNull(),
+    /** @deprecated Prefer role_requirements rows; kept for legacy/demo. */
     claims: jsonb("claims").$type<Claim[]>().default([]),
+    seniority: text("seniority"),
+    location: text("location"),
+    employmentType: text("employment_type"),
     status: roleStatusEnum("status").notNull().default("draft"),
     budgetCents: integer("budget_cents").notNull().default(5000),
     maxPerCandidateCents: integer("max_per_candidate_cents")
@@ -162,6 +180,38 @@ export type Claim = {
   verificationHints?: string[];
   weight?: number;
 };
+
+export const roleRequirements = pgTable(
+  "role_requirements",
+  {
+    id: text("id").primaryKey(),
+    roleId: text("role_id")
+      .notNull()
+      .references(() => roles.id, { onDelete: "cascade" }),
+    label: text("label").notNull(),
+    priority: requirementPriorityEnum("priority").notNull().default("must-have"),
+    weight: integer("weight").notNull().default(1),
+    sortOrder: integer("sort_order").notNull().default(0),
+    verificationHints: jsonb("verification_hints").$type<string[]>().default([]),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("role_requirements_role_idx").on(t.roleId)],
+);
+
+export const rolePerspectives = pgTable(
+  "role_perspectives",
+  {
+    id: text("id").primaryKey(),
+    roleId: text("role_id")
+      .notNull()
+      .references(() => roles.id, { onDelete: "cascade" }),
+    kind: perspectiveKindEnum("kind").notNull(),
+    title: text("title").notNull(),
+    body: text("body").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("role_perspectives_role_idx").on(t.roleId)],
+);
 
 export const people = pgTable(
   "people",
@@ -374,6 +424,7 @@ export const agentSessions = pgTable(
       .references(() => user.id, { onDelete: "cascade" }),
     roleId: text("role_id").references(() => roles.id, { onDelete: "set null" }),
     kind: text("kind").notNull(), // recruiting | coding
+    title: text("title").notNull().default("Session"),
     sandboxName: text("sandbox_name"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -401,6 +452,22 @@ export const agentMessages = pgTable(
 export const rolesRelations = relations(roles, ({ many }) => ({
   candidates: many(candidates),
   zeroCalls: many(zeroCalls),
+  requirements: many(roleRequirements),
+  perspectives: many(rolePerspectives),
+}));
+
+export const roleRequirementsRelations = relations(roleRequirements, ({ one }) => ({
+  role: one(roles, {
+    fields: [roleRequirements.roleId],
+    references: [roles.id],
+  }),
+}));
+
+export const rolePerspectivesRelations = relations(rolePerspectives, ({ one }) => ({
+  role: one(roles, {
+    fields: [rolePerspectives.roleId],
+    references: [roles.id],
+  }),
 }));
 
 export const candidatesRelations = relations(candidates, ({ one, many }) => ({

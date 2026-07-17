@@ -8,6 +8,8 @@ import {
   evidence,
   knowledgeSnippets,
   people,
+  rolePerspectives,
+  roleRequirements,
   roles,
   type Claim,
 } from "@/lib/db/schema";
@@ -24,21 +26,67 @@ function titleFromBrief(brief: string) {
   return first.length > 72 ? `${first.slice(0, 69)}…` : first;
 }
 
-async function compileClaims(ctx: RecruitingContext, claims: Omit<Claim, "id">[]) {
+async function compileClaims(
+  ctx: RecruitingContext,
+  claims: Omit<Claim, "id">[],
+  meta?: {
+    seniority?: string;
+    location?: string;
+    employmentType?: string;
+    perspectives?: {
+      kind: "company" | "team" | "hiring_manager" | "candidate" | "market";
+      title: string;
+      body: string;
+    }[];
+  },
+) {
   const compiled: Claim[] = claims.map((c) => ({
     id: crypto.randomUUID(),
     ...c,
   }));
   const [role] = await db.select().from(roles).where(eq(roles.id, ctx.roleId)).limit(1);
+
   await db
     .update(roles)
     .set({
       claims: compiled,
       title: titleFromBrief(role?.brief || "Role"),
+      seniority: meta?.seniority ?? role?.seniority,
+      location: meta?.location ?? role?.location,
+      employmentType: meta?.employmentType ?? role?.employmentType,
       status: "sourcing",
       updatedAt: new Date(),
     })
     .where(eq(roles.id, ctx.roleId));
+
+  await db.delete(roleRequirements).where(eq(roleRequirements.roleId, ctx.roleId));
+  if (compiled.length) {
+    await db.insert(roleRequirements).values(
+      compiled.map((c, i) => ({
+        id: c.id,
+        roleId: ctx.roleId,
+        label: c.label,
+        priority: c.priority,
+        weight: c.weight ?? 1,
+        sortOrder: i,
+        verificationHints: c.verificationHints ?? [],
+      })),
+    );
+  }
+
+  if (meta?.perspectives?.length) {
+    await db.delete(rolePerspectives).where(eq(rolePerspectives.roleId, ctx.roleId));
+    await db.insert(rolePerspectives).values(
+      meta.perspectives.map((p) => ({
+        id: crypto.randomUUID(),
+        roleId: ctx.roleId,
+        kind: p.kind,
+        title: p.title,
+        body: p.body,
+      })),
+    );
+  }
+
   return compiled;
 }
 
@@ -143,7 +191,20 @@ async function verifyCandidate(
       }
     )?.claims || [];
 
-  const roleClaims = (role?.claims as Claim[]) || [];
+  const reqs = await db
+    .select()
+    .from(roleRequirements)
+    .where(eq(roleRequirements.roleId, ctx.roleId));
+  const roleClaims: Claim[] =
+    reqs.length > 0
+      ? reqs.map((r) => ({
+          id: r.id,
+          label: r.label,
+          priority: r.priority,
+          verificationHints: r.verificationHints ?? [],
+          weight: r.weight,
+        }))
+      : ((role?.claims as Claim[]) || []);
   for (const claim of claims) {
     const matched = roleClaims[0];
     await db.insert(evidence).values({
@@ -274,8 +335,32 @@ export function createRecruitingTools(ctx: RecruitingContext) {
             verificationHints: z.array(z.string()).optional(),
           }),
         ),
+        seniority: z.string().optional(),
+        location: z.string().optional(),
+        employmentType: z.string().optional(),
+        perspectives: z
+          .array(
+            z.object({
+              kind: z.enum([
+                "company",
+                "team",
+                "hiring_manager",
+                "candidate",
+                "market",
+              ]),
+              title: z.string(),
+              body: z.string(),
+            }),
+          )
+          .optional(),
       }),
-      execute: async ({ claims }) => compileClaims(ctx, claims),
+      execute: async ({ claims, seniority, location, employmentType, perspectives }) =>
+        compileClaims(ctx, claims, {
+          seniority,
+          location,
+          employmentType,
+          perspectives,
+        }),
     }),
 
     discoverZeroServices: tool({
@@ -337,21 +422,41 @@ export async function runDemoRecruitingLoop(ctx: RecruitingContext, brief: strin
   const steps: string[] = [];
 
   steps.push("Compiling claims from brief…");
-  await compileClaims(ctx, [
+  await compileClaims(
+    ctx,
+    [
+      {
+        label: "Production Rust",
+        priority: "must-have",
+        verificationHints: ["GitHub", "technical writing"],
+      },
+      {
+        label: "Kubernetes",
+        priority: "must-have",
+        verificationHints: ["Projects", "profile"],
+      },
+      { label: "Startup experience", priority: "must-have" },
+      { label: "Recent OSS activity", priority: "must-have" },
+      { label: "Transition signal", priority: "preferred" },
+    ],
     {
-      label: "Production Rust",
-      priority: "must-have",
-      verificationHints: ["GitHub", "technical writing"],
+      seniority: "Staff / founding",
+      location: "Remote / Bay Area",
+      employmentType: "Full-time",
+      perspectives: [
+        {
+          kind: "company",
+          title: "Company",
+          body: "Early agentic-AI startup hiring a founding infrastructure engineer.",
+        },
+        {
+          kind: "candidate",
+          title: "Candidate fit",
+          body: "Strong production Rust + Kubernetes signal with recent OSS activity and openness to a new role.",
+        },
+      ],
     },
-    {
-      label: "Kubernetes",
-      priority: "must-have",
-      verificationHints: ["Projects", "profile"],
-    },
-    { label: "Startup experience", priority: "must-have" },
-    { label: "Recent OSS activity", priority: "must-have" },
-    { label: "Transition signal", priority: "preferred" },
-  ]);
+  );
 
   steps.push("Discovering Zero capabilities…");
   await discoverServices({

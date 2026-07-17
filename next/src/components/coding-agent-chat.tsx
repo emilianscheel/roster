@@ -8,19 +8,30 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, Loader2 } from "lucide-react";
 
-export function CodingAgentChat() {
+type SeedMessage = { id: string; role: string; text: string };
+
+export function CodingAgentChat({
+  sessionId,
+  initialMessages = [],
+}: {
+  sessionId?: string;
+  initialMessages?: SeedMessage[];
+}) {
   const [input, setInput] = useState("");
-  const [demoMessages, setDemoMessages] = useState<
-    { id: string; role: string; text: string }[]
-  >([]);
+  const [demoMessages, setDemoMessages] = useState<SeedMessage[]>(initialMessages);
   const [demoBusy, setDemoBusy] = useState(false);
 
   const transport = useMemo(
-    () => new DefaultChatTransport({ api: "/api/agent/coding" }),
-    [],
+    () =>
+      new DefaultChatTransport({
+        api: "/api/agent/coding",
+        body: sessionId ? { sessionId } : undefined,
+      }),
+    [sessionId],
   );
   const { messages, sendMessage, status } = useChat({ transport });
   const busy = status === "submitted" || status === "streaming" || demoBusy;
+  const useDemo = !process.env.NEXT_PUBLIC_AI_ENABLED;
 
   async function submitDemo(text: string) {
     setDemoBusy(true);
@@ -33,6 +44,7 @@ export function CodingAgentChat() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          sessionId,
           messages: [
             {
               id: crypto.randomUUID(),
@@ -56,10 +68,10 @@ export function CodingAgentChat() {
     }
   }
 
-  const useDemo = !process.env.NEXT_PUBLIC_AI_ENABLED;
+  const shown = useDemo ? demoMessages : messages;
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] flex-col gap-3">
+    <div className="flex min-h-[calc(100vh-8rem)] flex-1 flex-col gap-3">
       <ScrollArea className="flex-1 rounded-lg border border-border p-4">
         <div className="space-y-4">
           {useDemo
@@ -92,8 +104,8 @@ export function CodingAgentChat() {
                   </div>
                 </div>
               ))}
-          {(useDemo ? demoMessages : messages).length === 0 ? (
-            <p className="text-sm text-muted-foreground">Sandbox agent</p>
+          {shown.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Session agent</p>
           ) : null}
         </div>
       </ScrollArea>
@@ -114,7 +126,7 @@ export function CodingAgentChat() {
         <Textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask the coding agent…"
+          placeholder="Ask the agent… e.g. store a LinkedIn person"
           className="min-h-12 resize-none"
           disabled={busy}
         />
