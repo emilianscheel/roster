@@ -42,7 +42,7 @@ export function LandingHero() {
   return (
     <GradientCanvas className="h-svh overflow-hidden">
       <div className="relative flex h-full w-full flex-col items-center overflow-hidden text-white">
-        <p className="absolute top-20 left-1/2 -translate-x-1/2 font-instrument text-3xl tracking-tight text-white md:top-24 md:text-4xl">
+        <p className="absolute top-12 left-1/2 -translate-x-1/2 font-instrument text-3xl tracking-tight text-white md:top-14 md:text-4xl">
           Roster
         </p>
 
@@ -52,7 +52,7 @@ export function LandingHero() {
             onClick={advance}
             className="w-full cursor-pointer text-center text-white select-none"
           >
-            <div className="relative flex min-h-16 w-full items-center justify-center">
+            <div className="relative flex min-h-14 w-full items-center justify-center">
               <AnimatePresence mode="wait">
                 <motion.h1
                   key={HEADLINES[index]}
@@ -60,7 +60,7 @@ export function LandingHero() {
                   animate={{ opacity: 1, filter: "blur(0px)" }}
                   exit={{ opacity: 0, filter: "blur(10px)" }}
                   transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                  className="w-full text-center font-sans text-4xl font-medium tracking-[0.08em] whitespace-nowrap text-white uppercase md:text-5xl"
+                  className="w-full text-center font-sans text-3xl font-medium tracking-normal whitespace-nowrap text-white uppercase md:text-4xl"
                 >
                   {HEADLINES[index]}
                 </motion.h1>
