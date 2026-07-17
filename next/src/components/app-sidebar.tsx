@@ -21,6 +21,7 @@ import { globalNav, roleNav, type NavItem } from "@/lib/nav";
 import type { NavStats } from "@/lib/nav-stats";
 import { loadRoleNavStats } from "@/lib/nav-stats-actions";
 import { authClient } from "@/lib/auth-client";
+import { writeLastEmail } from "@/lib/auth/last-email";
 import { Button } from "@/components/ui/button";
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { useCommandMenu } from "@/components/command-menu";
@@ -48,6 +49,7 @@ export function AppSidebar({ globalStats }: AppSidebarProps) {
 
   const [roleStats, setRoleStats] = useState<NavStats>({});
   const [isMac, setIsMac] = useState(true);
+  const { data: session } = authClient.useSession();
 
   useEffect(() => {
     setIsMac(/Mac|iPhone|iPad|iPod/.test(navigator.platform));
@@ -170,15 +172,17 @@ export function AppSidebar({ globalStats }: AppSidebarProps) {
           variant="ghost"
           size="sm"
           className="w-full justify-start gap-2"
-          onClick={() =>
-            authClient.signOut({
+          onClick={() => {
+            const email = session?.user?.email;
+            if (email) writeLastEmail(email);
+            void authClient.signOut({
               fetchOptions: {
                 onSuccess: () => {
                   window.location.href = "/sign-in";
                 },
               },
-            })
-          }
+            });
+          }}
         >
           <LogOut className="size-4" />
           <span>Sign out</span>

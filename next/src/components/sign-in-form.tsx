@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { authClient } from "@/lib/auth-client";
+import { readLastEmail, writeLastEmail } from "@/lib/auth/last-email";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Fingerprint, Loader2 } from "lucide-react";
@@ -14,6 +15,7 @@ function isValidEmail(value: string) {
 
 export function SignInForm() {
   const [email, setEmail] = useState("");
+  const [rememberedEmail, setRememberedEmail] = useState<string | null>(null);
   const [status, setStatus] = useState<EmailStatus>("idle");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,8 +26,16 @@ export function SignInForm() {
     return host === "localhost" || host === "127.0.0.1";
   }, []);
 
+  const effectiveEmail = email.trim() || rememberedEmail || "";
+  const usingRemembered = !email.trim() && Boolean(rememberedEmail);
+
   useEffect(() => {
-    if (!isValidEmail(email)) {
+    const last = readLastEmail();
+    if (last && isValidEmail(last)) setRememberedEmail(last);
+  }, []);
+
+  useEffect(() => {
+    if (!isValidEmail(effectiveEmail)) {
       setStatus("idle");
       return;
     }
@@ -36,7 +46,7 @@ export function SignInForm() {
         const res = await fetch("/api/auth/check-email", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: email.trim().toLowerCase() }),
+          body: JSON.stringify({ email: effectiveEmail.trim().toLowerCase() }),
         });
         const data = (await res.json()) as {
           registered?: boolean;
@@ -49,10 +59,11 @@ export function SignInForm() {
     }, 350);
 
     return () => window.clearTimeout(handle);
-  }, [email]);
+  }, [effectiveEmail]);
 
   async function continueWithPasskey() {
-    if (!isValidEmail(email) || busy) return;
+    const target = effectiveEmail.trim().toLowerCase();
+    if (!isValidEmail(target) || busy) return;
     if (status !== "new" && status !== "existing") return;
 
     setBusy(true);
@@ -72,18 +83,20 @@ export function SignInForm() {
           setError(err.message || "Sign-in failed");
           return;
         }
+        writeLastEmail(target);
         window.location.href = "/";
         return;
       }
 
       const { error: err } = await authClient.passkey.addPasskey({
-        name: email.trim().toLowerCase(),
-        context: email.trim().toLowerCase(),
+        name: target,
+        context: target,
       });
       if (err) {
         setError(err.message || "Could not create passkey");
         return;
       }
+      writeLastEmail(target);
       window.location.href = "/";
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed");
@@ -92,7 +105,9 @@ export function SignInForm() {
     }
   }
 
-  const ready = isValidEmail(email) && (status === "new" || status === "existing");
+  const ready =
+    isValidEmail(effectiveEmail) &&
+    (status === "new" || status === "existing");
   const label =
     status === "existing"
       ? "Sign in"
@@ -102,15 +117,17 @@ export function SignInForm() {
 
   return (
     <div className="mx-auto flex w-full max-w-sm flex-col gap-5">
-      <h1 className="font-heading text-4xl tracking-tight">Roster</h1>
+      <h1 className="text-center font-instrument text-2xl tracking-tight">
+        Roster
+      </h1>
       {!hostOk ? (
-        <p className="text-sm text-destructive">
+        <p className="text-center text-sm text-destructive">
           Use http://localhost:3000 (not a LAN IP) for passkeys in Safari.
         </p>
       ) : null}
       <Input
         type="email"
-        placeholder="you@company.com"
+        placeholder={rememberedEmail ?? "you@company.com"}
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         autoComplete="username webauthn"
@@ -122,6 +139,11 @@ export function SignInForm() {
           }
         }}
       />
+      {usingRemembered ? (
+        <p className="text-center text-xs text-muted-foreground">
+          Press Sign in to continue as {rememberedEmail}
+        </p>
+      ) : null}
       <Button
         onClick={continueWithPasskey}
         disabled={!ready || busy}

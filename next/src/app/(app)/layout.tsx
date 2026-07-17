@@ -13,11 +13,11 @@ export default async function AppLayout({
   const globalStats = await getGlobalNavStats(orgId);
 
   return (
-    <SidebarProvider className="min-h-svh">
+    <SidebarProvider className="h-svh max-h-svh overflow-hidden">
       <CommandMenuProvider>
         <AppSidebar globalStats={globalStats} />
-        <SidebarInset className="min-h-svh">
-          <div className="flex min-h-svh flex-1 flex-col p-4 md:p-6">
+        <SidebarInset className="min-h-0 overflow-hidden">
+          <div className="flex h-full min-h-0 flex-1 flex-col overflow-y-auto p-4 md:p-6">
             {children}
           </div>
         </SidebarInset>

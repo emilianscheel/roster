@@ -103,7 +103,56 @@ function mockResearchData(input: ZeroCallInput) {
     };
   }
   if (input.capability.includes("enrich") || input.capability.includes("github")) {
+    const slug = seed
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, ".")
+      .replace(/^\.+|\.+$/g, "")
+      .slice(0, 32) || "candidate";
     return {
+      profile: {
+        email: `${slug.split(".")[0] || "alex"}@example.com`,
+        headline: "Staff Software Engineer · Distributed systems",
+        location: "San Francisco Bay Area",
+        links: {
+          linkedin: `https://www.linkedin.com/in/${slug}`,
+          github: `https://github.com/${slug.replace(/\./g, "")}`,
+          twitter: `https://x.com/${slug.replace(/\./g, "")}`,
+        },
+        experiences: [
+          {
+            companyName: "Stripe",
+            companyDomain: "stripe.com",
+            title: "Staff Software Engineer",
+            startDate: "2022-04",
+            endDate: null,
+            isCurrent: true,
+            description:
+              "Owns multi-region reliability for payments orchestration.",
+          },
+          {
+            companyName: "Datadog",
+            companyDomain: "datadoghq.com",
+            title: "Senior Software Engineer",
+            startDate: "2019-01",
+            endDate: "2022-03",
+            isCurrent: false,
+            description: "High-cardinality metrics ingestion pipelines.",
+          },
+        ],
+        education: [
+          {
+            schoolName: "Carnegie Mellon University",
+            schoolDomain: "cmu.edu",
+            degree: "B.S.",
+            field: "Computer Science",
+            startDate: "2012",
+            endDate: "2016",
+            description: null,
+          },
+        ],
+        skills: ["Rust", "Go", "Kubernetes", "PostgreSQL"],
+        summary: `Demo enrichment for ${seed}`,
+      },
       claims: [
         {
           label: "Production Rust",
