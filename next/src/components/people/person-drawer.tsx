@@ -27,7 +27,6 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import {
   type PersonListItem,
   formatTimelineRange,
@@ -213,8 +212,6 @@ export function PersonDrawer({
                   ) : null}
                 </section>
 
-                <Separator />
-
                 <section className="space-y-3">
                   <h3 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                     Profile
@@ -242,186 +239,174 @@ export function PersonDrawer({
                 </section>
 
                 {links.length > 0 ? (
-                  <>
-                    <Separator />
-                    <section className="space-y-3">
-                      <h3 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                        Links
-                      </h3>
-                      <div className="grid gap-2">
-                        {links.map((link) => {
-                          const Icon = link.icon;
-                          return (
-                            <a
-                              key={link.key}
-                              href={link.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="block"
+                  <section className="space-y-3">
+                    <h3 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                      Links
+                    </h3>
+                    <div className="grid gap-2">
+                      {links.map((link) => {
+                        const Icon = link.icon;
+                        return (
+                          <a
+                            key={link.key}
+                            href={link.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block"
+                          >
+                            <Card
+                              size="sm"
+                              className="transition-colors hover:bg-accent/40"
                             >
-                              <Card
-                                size="sm"
-                                className="transition-colors hover:bg-accent/40"
-                              >
-                                <CardContent className="flex items-center gap-3 py-0">
-                                  <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
-                                    <Icon className="size-4" />
+                              <CardContent className="flex items-center gap-3 py-0">
+                                <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                                  <Icon className="size-4" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <div className="text-sm font-medium">
+                                    {link.label}
                                   </div>
-                                  <div className="min-w-0 flex-1">
-                                    <div className="text-sm font-medium">
-                                      {link.label}
-                                    </div>
-                                    <div className="truncate text-xs text-muted-foreground">
-                                      {link.displayHost}
-                                    </div>
+                                  <div className="truncate text-xs text-muted-foreground">
+                                    {link.displayHost}
                                   </div>
-                                  <ExternalLink className="size-3.5 shrink-0 text-muted-foreground" />
-                                </CardContent>
-                              </Card>
-                            </a>
-                          );
-                        })}
-                      </div>
-                    </section>
-                  </>
+                                </div>
+                                <ExternalLink className="size-3.5 shrink-0 text-muted-foreground" />
+                              </CardContent>
+                            </Card>
+                          </a>
+                        );
+                      })}
+                    </div>
+                  </section>
                 ) : null}
 
                 {localPerson.experiences.length > 0 ? (
-                  <>
-                    <Separator />
-                    <section className="space-y-3">
-                      <h3 className="flex items-center gap-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                        <Briefcase className="size-3.5" />
-                        Experience
-                      </h3>
-                      <ol className="relative ml-3 space-y-0 border-l border-border">
-                        {localPerson.experiences.map((exp) => (
+                  <section className="space-y-3">
+                    <h3 className="flex items-center gap-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                      <Briefcase className="size-3.5" />
+                      Experience
+                    </h3>
+                    <ol className="relative ml-3 space-y-0 border-l border-border">
+                      {localPerson.experiences.map((exp) => (
+                        <li
+                          key={exp.id}
+                          className="relative pb-5 pl-6 last:pb-0"
+                        >
+                          <span className="absolute top-1 -left-[9px] flex size-4 items-center justify-center rounded-full bg-background ring-2 ring-border">
+                            <Building2 className="size-2.5 text-muted-foreground" />
+                          </span>
+                          <div className="flex gap-3">
+                            <CompanyLogo
+                              name={exp.companyName}
+                              domain={exp.companyDomain}
+                              size={36}
+                            />
+                            <div className="min-w-0 flex-1">
+                              <div className="font-medium">{exp.title}</div>
+                              <div className="text-sm text-muted-foreground">
+                                {exp.companyName}
+                              </div>
+                              <div className="mt-0.5 text-xs text-muted-foreground">
+                                {formatTimelineRange(
+                                  exp.startDate,
+                                  exp.endDate,
+                                  exp.isCurrent,
+                                )}
+                              </div>
+                              {exp.description ? (
+                                <p className="mt-1.5 text-sm text-muted-foreground">
+                                  {exp.description}
+                                </p>
+                              ) : null}
+                            </div>
+                          </div>
+                        </li>
+                      ))}
+                    </ol>
+                  </section>
+                ) : null}
+
+                {localPerson.education.length > 0 ? (
+                  <section className="space-y-3">
+                    <h3 className="flex items-center gap-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                      <GraduationCap className="size-3.5" />
+                      Education
+                    </h3>
+                    <ol className="relative ml-3 space-y-0 border-l border-border">
+                      {localPerson.education.map((edu) => {
+                        const degreeLine = [edu.degree, edu.field]
+                          .filter(Boolean)
+                          .join(", ");
+                        return (
                           <li
-                            key={exp.id}
+                            key={edu.id}
                             className="relative pb-5 pl-6 last:pb-0"
                           >
                             <span className="absolute top-1 -left-[9px] flex size-4 items-center justify-center rounded-full bg-background ring-2 ring-border">
-                              <Building2 className="size-2.5 text-muted-foreground" />
+                              <GraduationCap className="size-2.5 text-muted-foreground" />
                             </span>
                             <div className="flex gap-3">
                               <CompanyLogo
-                                name={exp.companyName}
-                                domain={exp.companyDomain}
+                                name={edu.schoolName}
+                                domain={edu.schoolDomain}
                                 size={36}
                               />
                               <div className="min-w-0 flex-1">
-                                <div className="font-medium">{exp.title}</div>
-                                <div className="text-sm text-muted-foreground">
-                                  {exp.companyName}
+                                <div className="font-medium">
+                                  {edu.schoolName}
                                 </div>
+                                {degreeLine ? (
+                                  <div className="text-sm text-muted-foreground">
+                                    {degreeLine}
+                                  </div>
+                                ) : null}
                                 <div className="mt-0.5 text-xs text-muted-foreground">
                                   {formatTimelineRange(
-                                    exp.startDate,
-                                    exp.endDate,
-                                    exp.isCurrent,
+                                    edu.startDate,
+                                    edu.endDate,
                                   )}
                                 </div>
-                                {exp.description ? (
+                                {edu.description ? (
                                   <p className="mt-1.5 text-sm text-muted-foreground">
-                                    {exp.description}
+                                    {edu.description}
                                   </p>
                                 ) : null}
                               </div>
                             </div>
                           </li>
-                        ))}
-                      </ol>
-                    </section>
-                  </>
+                        );
+                      })}
+                    </ol>
+                  </section>
                 ) : null}
 
-                {localPerson.education.length > 0 ? (
-                  <>
-                    <Separator />
-                    <section className="space-y-3">
-                      <h3 className="flex items-center gap-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                        <GraduationCap className="size-3.5" />
-                        Education
-                      </h3>
-                      <ol className="relative ml-3 space-y-0 border-l border-border">
-                        {localPerson.education.map((edu) => {
-                          const degreeLine = [edu.degree, edu.field]
-                            .filter(Boolean)
-                            .join(", ");
-                          return (
-                            <li
-                              key={edu.id}
-                              className="relative pb-5 pl-6 last:pb-0"
-                            >
-                              <span className="absolute top-1 -left-[9px] flex size-4 items-center justify-center rounded-full bg-background ring-2 ring-border">
-                                <GraduationCap className="size-2.5 text-muted-foreground" />
-                              </span>
-                              <div className="flex gap-3">
-                                <CompanyLogo
-                                  name={edu.schoolName}
-                                  domain={edu.schoolDomain}
-                                  size={36}
-                                />
-                                <div className="min-w-0 flex-1">
-                                  <div className="font-medium">
-                                    {edu.schoolName}
-                                  </div>
-                                  {degreeLine ? (
-                                    <div className="text-sm text-muted-foreground">
-                                      {degreeLine}
-                                    </div>
-                                  ) : null}
-                                  <div className="mt-0.5 text-xs text-muted-foreground">
-                                    {formatTimelineRange(
-                                      edu.startDate,
-                                      edu.endDate,
-                                    )}
-                                  </div>
-                                  {edu.description ? (
-                                    <p className="mt-1.5 text-sm text-muted-foreground">
-                                      {edu.description}
-                                    </p>
-                                  ) : null}
-                                </div>
-                              </div>
-                            </li>
-                          );
-                        })}
-                      </ol>
-                    </section>
-                  </>
+                {localPerson.rawText || localPerson.notes ? (
+                  <section className="space-y-3">
+                    <h3 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                      Plain text
+                    </h3>
+                    {localPerson.notes ? (
+                      <div>
+                        <div className="mb-1 text-xs text-muted-foreground">
+                          Notes
+                        </div>
+                        <pre className="whitespace-pre-wrap rounded-md bg-muted/50 p-3 font-mono text-xs leading-relaxed">
+                          {localPerson.notes}
+                        </pre>
+                      </div>
+                    ) : null}
+                    {localPerson.rawText ? (
+                      <div>
+                        <div className="mb-1 text-xs text-muted-foreground">
+                          Source profile
+                        </div>
+                        <pre className="whitespace-pre-wrap rounded-md bg-muted/50 p-3 font-mono text-xs leading-relaxed">
+                          {localPerson.rawText}
+                        </pre>
+                      </div>
+                    ) : null}
+                  </section>
                 ) : null}
-
-                {(localPerson.rawText || localPerson.notes) && (
-                  <>
-                    <Separator />
-                    <section className="space-y-3">
-                      <h3 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                        Plain text
-                      </h3>
-                      {localPerson.notes ? (
-                        <div>
-                          <div className="mb-1 text-xs text-muted-foreground">
-                            Notes
-                          </div>
-                          <pre className="whitespace-pre-wrap rounded-md bg-muted/50 p-3 font-mono text-xs leading-relaxed">
-                            {localPerson.notes}
-                          </pre>
-                        </div>
-                      ) : null}
-                      {localPerson.rawText ? (
-                        <div>
-                          <div className="mb-1 text-xs text-muted-foreground">
-                            Source profile
-                          </div>
-                          <pre className="whitespace-pre-wrap rounded-md bg-muted/50 p-3 font-mono text-xs leading-relaxed">
-                            {localPerson.rawText}
-                          </pre>
-                        </div>
-                      ) : null}
-                    </section>
-                  </>
-                )}
               </div>
             </ScrollArea>
           </>
