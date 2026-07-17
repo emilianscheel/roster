@@ -161,6 +161,7 @@ export default async function CommandPage() {
             </CardContent>
             <CardFooter>
               <Button
+                nativeButton={false}
                 render={<Link href={t.href} />}
                 className="w-full"
                 size="lg"
