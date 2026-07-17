@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull, lte, or } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { getOrgIdForUser } from "@/lib/auth/org";
 import { db } from "@/lib/db";
@@ -18,10 +18,16 @@ export async function GET() {
   const ctx = await requireOrg();
   if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const now = new Date();
   const tasks = await db
     .select()
     .from(approvalTasks)
-    .where(eq(approvalTasks.organizationId, ctx.orgId));
+    .where(
+      and(
+        eq(approvalTasks.organizationId, ctx.orgId),
+        or(isNull(approvalTasks.remindAt), lte(approvalTasks.remindAt, now)),
+      ),
+    );
 
   return NextResponse.json({
     tasks: tasks.sort(
@@ -36,9 +42,10 @@ export async function PATCH(req: Request) {
 
   const body = (await req.json()) as {
     id: string;
-    action: "allow" | "reject" | "reform";
+    action: "allow" | "reject" | "reform" | "remind";
     reformNotes?: string;
     payload?: Record<string, unknown>;
+    remindAt?: string;
   };
 
   const [task] = await db
@@ -51,10 +58,31 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
+  if (body.action === "remind") {
+    if (!body.remindAt) {
+      return NextResponse.json(
+        { error: "remindAt is required" },
+        { status: 400 },
+      );
+    }
+    const remindAt = new Date(body.remindAt);
+    if (Number.isNaN(remindAt.getTime())) {
+      return NextResponse.json(
+        { error: "Invalid remindAt" },
+        { status: 400 },
+      );
+    }
+    await db
+      .update(approvalTasks)
+      .set({ remindAt })
+      .where(eq(approvalTasks.id, body.id));
+    return NextResponse.json({ ok: true, status: "reminded", remindAt });
+  }
+
   if (body.action === "reject") {
     await db
       .update(approvalTasks)
-      .set({ status: "rejected", resolvedAt: new Date() })
+      .set({ status: "rejected", resolvedAt: new Date(), remindAt: null })
       .where(eq(approvalTasks.id, body.id));
     return NextResponse.json({ ok: true, status: "rejected" });
   }
@@ -67,6 +95,7 @@ export async function PATCH(req: Request) {
         reformNotes: body.reformNotes || "",
         payload: { ...(task.payload as object), ...(body.payload || {}) },
         resolvedAt: new Date(),
+        remindAt: null,
       })
       .where(eq(approvalTasks.id, body.id));
 
@@ -92,7 +121,7 @@ export async function PATCH(req: Request) {
   // allow — demo stub only, never real outreach
   await db
     .update(approvalTasks)
-    .set({ status: "allowed", resolvedAt: new Date() })
+    .set({ status: "allowed", resolvedAt: new Date(), remindAt: null })
     .where(eq(approvalTasks.id, body.id));
 
   if (task.candidateId && task.kind === "send_outreach") {

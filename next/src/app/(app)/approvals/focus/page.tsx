@@ -1,10 +1,10 @@
 import { requireSession } from "@/lib/auth/session";
 import { loadApprovalTasks } from "@/lib/approvals";
-import { ApprovalsWorkbench } from "@/components/approvals-workbench";
+import { ApprovalFocus } from "@/components/approval-focus";
 
-export default async function ApprovalsPage() {
+export default async function ApprovalsFocusPage() {
   const { orgId } = await requireSession();
   const tasks = await loadApprovalTasks(orgId);
 
-  return <ApprovalsWorkbench tasks={tasks} />;
+  return <ApprovalFocus tasks={tasks} />;
 }

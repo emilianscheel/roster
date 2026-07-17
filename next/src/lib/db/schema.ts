@@ -431,6 +431,7 @@ export const approvalTasks = pgTable(
     payload: jsonb("payload").$type<Record<string, unknown>>().default({}),
     reformNotes: text("reform_notes"),
     status: approvalStatusEnum("status").notNull().default("pending"),
+    remindAt: timestamp("remind_at"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     resolvedAt: timestamp("resolved_at"),
   },

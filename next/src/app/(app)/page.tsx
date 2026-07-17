@@ -1,4 +1,4 @@
-import { eq, sql, and, inArray } from "drizzle-orm";
+import { eq, sql, and, inArray, isNull, lte, or } from "drizzle-orm";
 import { requireSession } from "@/lib/auth/session";
 import { db } from "@/lib/db";
 import {
@@ -72,6 +72,7 @@ export default async function CommandPage() {
     }
   }
 
+  const now = new Date();
   const [pending] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(approvalTasks)
@@ -79,6 +80,7 @@ export default async function CommandPage() {
       and(
         eq(approvalTasks.organizationId, orgId),
         eq(approvalTasks.status, "pending"),
+        or(isNull(approvalTasks.remindAt), lte(approvalTasks.remindAt, now)),
       ),
     );
 
