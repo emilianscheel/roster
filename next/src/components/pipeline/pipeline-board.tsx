@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -24,17 +24,19 @@ import {
   CandidateCard,
   CandidateCardPreview,
 } from "@/components/pipeline/candidate-card";
+import { CandidateDrawer } from "@/components/pipeline/candidate-drawer";
 import {
   PIPELINE_STAGES,
   type PipelineCandidate,
 } from "@/components/pipeline/types";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import {
   updateCandidateStage,
   type PipelineStage,
 } from "@/lib/pipeline-actions";
+import { cn } from "@/lib/utils";
 
 type PipelineBoardProps = {
   roleId: string;
@@ -63,39 +65,43 @@ function groupByStage(
 function PipelineColumn({
   stage,
   items,
+  onSelect,
 }: {
   stage: PipelineStage;
   items: PipelineCandidate[];
+  onSelect: (id: string) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: stage });
 
   return (
-    <Card
-      size="sm"
-      className={`flex h-full min-h-0 min-w-0 flex-1 flex-col gap-0 py-0 ${
-        isOver ? "ring-2 ring-ring/40" : ""
-      }`}
+    <div
+      className={cn(
+        "flex h-full min-h-0 min-w-0 flex-1 flex-col",
+        isOver && "bg-muted/30",
+      )}
     >
-      <CardHeader className="shrink-0 border-b px-3 py-2.5">
-        <CardTitle className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+      <div className="shrink-0 px-2 py-2.5">
+        <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
           {stage} · {items.length}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="min-h-0 flex-1 overflow-hidden p-0">
-        <ScrollArea className="h-full">
-          <div ref={setNodeRef} className="min-h-24 space-y-2 p-2">
-            <SortableContext
-              items={items.map((c) => c.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              {items.map((candidate) => (
-                <CandidateCard key={candidate.id} candidate={candidate} />
-              ))}
-            </SortableContext>
-          </div>
-        </ScrollArea>
-      </CardContent>
-    </Card>
+        </div>
+      </div>
+      <ScrollArea className="min-h-0 flex-1">
+        <div ref={setNodeRef} className="min-h-24 space-y-2 px-2 pb-2">
+          <SortableContext
+            items={items.map((c) => c.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            {items.map((candidate) => (
+              <CandidateCard
+                key={candidate.id}
+                candidate={candidate}
+                onSelect={onSelect}
+              />
+            ))}
+          </SortableContext>
+        </div>
+      </ScrollArea>
+    </div>
   );
 }
 
@@ -104,6 +110,7 @@ export function PipelineBoard({ roleId, candidates }: PipelineBoardProps) {
   const [query, setQuery] = useState("");
   const [activeId, setActiveId] = useState<string | null>(null);
   const [originStage, setOriginStage] = useState<PipelineStage | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -125,6 +132,9 @@ export function PipelineBoard({ roleId, candidates }: PipelineBoardProps) {
   const columns = useMemo(() => groupByStage(filtered), [filtered]);
   const activeCandidate = activeId
     ? (items.find((c) => c.id === activeId) ?? null)
+    : null;
+  const selectedCandidate = selectedId
+    ? (items.find((c) => c.id === selectedId) ?? null)
     : null;
 
   function findContainer(
@@ -155,9 +165,7 @@ export function PipelineBoard({ roleId, candidates }: PipelineBoardProps) {
 
     setItems((prev) =>
       prev.map((c) =>
-        c.id === String(active.id)
-          ? { ...c, stage: overContainer }
-          : c,
+        c.id === String(active.id) ? { ...c, stage: overContainer } : c,
       ),
     );
   }
@@ -251,24 +259,39 @@ export function PipelineBoard({ roleId, candidates }: PipelineBoardProps) {
         onDragEnd={handleDragEnd}
         onDragCancel={handleDragCancel}
       >
-        <div className="flex min-h-0 flex-1 gap-3">
-          {PIPELINE_STAGES.map((stage) => (
-            <PipelineColumn
-              key={stage}
-              stage={stage}
-              items={columns[stage]}
-            />
+        <div className="flex min-h-0 flex-1">
+          {PIPELINE_STAGES.map((stage, index) => (
+            <Fragment key={stage}>
+              {index > 0 ? (
+                <Separator orientation="vertical" className="mx-1" />
+              ) : null}
+              <PipelineColumn
+                stage={stage}
+                items={columns[stage]}
+                onSelect={setSelectedId}
+              />
+            </Fragment>
           ))}
         </div>
-        <DragOverlay dropAnimation={{
-          duration: 200,
-          easing: "cubic-bezier(0.18, 0.67, 0.6, 1.22)",
-        }}>
+        <DragOverlay
+          dropAnimation={{
+            duration: 200,
+            easing: "cubic-bezier(0.18, 0.67, 0.6, 1.22)",
+          }}
+        >
           {activeCandidate ? (
             <CandidateCardPreview candidate={activeCandidate} />
           ) : null}
         </DragOverlay>
       </DndContext>
+
+      <CandidateDrawer
+        candidate={selectedCandidate}
+        open={Boolean(selectedCandidate)}
+        onOpenChange={(open) => {
+          if (!open) setSelectedId(null);
+        }}
+      />
     </div>
   );
 }
