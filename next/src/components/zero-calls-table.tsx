@@ -1,28 +1,21 @@
 "use client";
 
-import { useMemo, useState, type ComponentType } from "react";
-import {
-  Ban,
-  Check,
-  FileText,
-  GitBranch,
-  Mail,
-  Radar,
-  Search,
-  SkipForward,
-  Sparkles,
-  UserSearch,
-  X,
-  type LucideProps,
-} from "lucide-react";
+import { useMemo, useState } from "react";
+import { FileText, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { zeroCalls } from "@/lib/db/schema";
 import { cn } from "@/lib/utils";
+import {
+  CALL_STATUS_META,
+  formatRelativeTime,
+  humanizeCapability,
+  humanizeService,
+  resolveServiceMeta,
+} from "@/lib/zero/service-meta";
 
 type ZeroCall = typeof zeroCalls.$inferSelect;
-type IconComponent = ComponentType<LucideProps>;
 
 const STATUS_TABS = [
   { value: "all", label: "All", status: null as string | null },
@@ -31,83 +24,6 @@ const STATUS_TABS = [
   { value: "blocked", label: "Blocked", status: "blocked" },
   { value: "skipped", label: "Skipped", status: "skipped" },
 ] as const;
-
-const SERVICE_ICONS: Record<string, IconComponent> = {
-  "profile-scraper": UserSearch,
-  "person-enrichment": UserSearch,
-  "targeted-search": Search,
-  "github-signals": GitBranch,
-  "contact-enrichment": Radar,
-  "outreach-mail": Mail,
-  zero: Sparkles,
-};
-
-const STATUS_META: Record<
-  string,
-  { label: string; icon: IconComponent; className: string }
-> = {
-  success: {
-    label: "Success",
-    icon: Check,
-    className: "text-emerald-700 dark:text-emerald-400",
-  },
-  failed: {
-    label: "Failed",
-    icon: X,
-    className: "text-destructive",
-  },
-  blocked: {
-    label: "Blocked",
-    icon: Ban,
-    className: "text-amber-700 dark:text-amber-400",
-  },
-  skipped: {
-    label: "Skipped",
-    icon: SkipForward,
-    className: "text-muted-foreground",
-  },
-};
-
-function humanizeService(service: string): string {
-  return service
-    .split(/[-_./]/)
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
-}
-
-function humanizeCapability(capability: string): string {
-  const parts = capability.split(/[._]/).filter(Boolean);
-  if (parts.length === 0) return capability;
-  return parts
-    .map((part, i) =>
-      i === 0
-        ? part.charAt(0).toUpperCase() + part.slice(1)
-        : part.toLowerCase(),
-    )
-    .join(" ");
-}
-
-function formatRelativeTime(date: Date): string {
-  const seconds = Math.round((date.getTime() - Date.now()) / 1000);
-  const abs = Math.abs(seconds);
-  const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
-
-  if (abs < 60) return rtf.format(seconds, "second");
-  const minutes = Math.round(seconds / 60);
-  if (Math.abs(minutes) < 60) return rtf.format(minutes, "minute");
-  const hours = Math.round(minutes / 60);
-  if (Math.abs(hours) < 24) return rtf.format(hours, "hour");
-  const days = Math.round(hours / 24);
-  if (Math.abs(days) < 30) return rtf.format(days, "day");
-  const months = Math.round(days / 30);
-  if (Math.abs(months) < 12) return rtf.format(months, "month");
-  return rtf.format(Math.round(months / 12), "year");
-}
-
-function serviceIcon(service: string): IconComponent {
-  return SERVICE_ICONS[service] ?? Sparkles;
-}
 
 export function ZeroCallsTable({ calls }: { calls: ZeroCall[] }) {
   const [query, setQuery] = useState("");
@@ -121,11 +37,13 @@ export function ZeroCallsTable({ calls }: { calls: ZeroCall[] }) {
     return calls.filter((c) => {
       if (status && c.status !== status) return false;
       if (!q) return true;
+      const meta = resolveServiceMeta(c.service);
       const haystack = [
         c.service,
         c.capability,
         c.purpose,
         c.status,
+        meta.displayName,
         humanizeService(c.service),
         humanizeCapability(c.capability),
       ]
@@ -170,8 +88,8 @@ export function ZeroCallsTable({ calls }: { calls: ZeroCall[] }) {
           </div>
         ) : (
           filtered.map((call) => {
-            const Icon = serviceIcon(call.service);
-            const status = STATUS_META[call.status] ?? STATUS_META.skipped;
+            const { displayName, Icon } = resolveServiceMeta(call.service);
+            const status = CALL_STATUS_META[call.status] ?? CALL_STATUS_META.skipped;
             const StatusIcon = status.icon;
             const createdAt =
               call.createdAt instanceof Date
@@ -191,7 +109,7 @@ export function ZeroCallsTable({ calls }: { calls: ZeroCall[] }) {
                     {humanizeCapability(call.capability)}
                   </div>
                   <div className="flex min-w-0 items-center gap-2.5 truncate text-xs text-muted-foreground">
-                    <span className="truncate">{humanizeService(call.service)}</span>
+                    <span className="truncate">{displayName}</span>
                     <span className="text-border" aria-hidden>
                       ·
                     </span>

@@ -9,6 +9,7 @@ import { BudgetSettings } from "@/components/spend/budget-settings";
 import { CandidatesSpendTable } from "@/components/spend/candidates-spend-table";
 import { ExportMenu } from "@/components/spend/export-menu";
 import { KpiStrip } from "@/components/spend/kpi-strip";
+import { RecentReceipts } from "@/components/spend/recent-receipts";
 import { SpendByService } from "@/components/spend/spend-by-service";
 import { rowsToCsv } from "@/lib/spend/export-csv";
 import {
@@ -245,30 +246,7 @@ export default async function RoleSpendPage({ params }: { params: Promise<{ id: 
                         Open Arena
                     </Link>
                 </div>
-                {recentReceipts.length === 0 ? (
-                    <div className="rounded-lg border border-border px-4 py-8 text-center text-sm text-muted-foreground">
-                        Receipts appear here after Zero calls run.
-                    </div>
-                ) : (
-                    <div className="divide-y rounded-lg border border-border">
-                        {recentReceipts.map((c) => (
-                            <div
-                                key={c.id}
-                                className="flex items-center justify-between gap-3 px-4 py-3 text-sm"
-                            >
-                                <div className="min-w-0">
-                                    <div className="truncate font-medium">{c.service}</div>
-                                    <div className="truncate text-xs text-muted-foreground">
-                                        {c.capability} · {c.status}
-                                    </div>
-                                </div>
-                                <span className="shrink-0 tabular-nums">
-                                    {formatDollars(Number(c.actualCents), 3)}
-                                </span>
-                            </div>
-                        ))}
-                    </div>
-                )}
+                <RecentReceipts receipts={recentReceipts} />
             </section>
         </div>
     );
