@@ -286,117 +286,111 @@ export function PersonDrawer({
                   </>
                 ) : null}
 
-                <Separator />
-
-                <section className="space-y-3">
-                  <h3 className="flex items-center gap-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                    <Briefcase className="size-3.5" />
-                    Experience
-                  </h3>
-                  {localPerson.experiences.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
-                      No experience recorded
-                    </p>
-                  ) : (
-                    <ol className="relative ml-3 space-y-0 border-l border-border">
-                      {localPerson.experiences.map((exp) => (
-                        <li
-                          key={exp.id}
-                          className="relative pb-5 pl-6 last:pb-0"
-                        >
-                          <span className="absolute top-1 -left-[9px] flex size-4 items-center justify-center rounded-full bg-background ring-2 ring-border">
-                            <Building2 className="size-2.5 text-muted-foreground" />
-                          </span>
-                          <div className="flex gap-3">
-                            <CompanyLogo
-                              name={exp.companyName}
-                              domain={exp.companyDomain}
-                              size={36}
-                            />
-                            <div className="min-w-0 flex-1">
-                              <div className="font-medium">{exp.title}</div>
-                              <div className="text-sm text-muted-foreground">
-                                {exp.companyName}
-                              </div>
-                              <div className="mt-0.5 text-xs text-muted-foreground">
-                                {formatTimelineRange(
-                                  exp.startDate,
-                                  exp.endDate,
-                                  exp.isCurrent,
-                                )}
-                              </div>
-                              {exp.description ? (
-                                <p className="mt-1.5 text-sm text-muted-foreground">
-                                  {exp.description}
-                                </p>
-                              ) : null}
-                            </div>
-                          </div>
-                        </li>
-                      ))}
-                    </ol>
-                  )}
-                </section>
-
-                <Separator />
-
-                <section className="space-y-3">
-                  <h3 className="flex items-center gap-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                    <GraduationCap className="size-3.5" />
-                    Education
-                  </h3>
-                  {localPerson.education.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
-                      No education recorded
-                    </p>
-                  ) : (
-                    <ol className="relative ml-3 space-y-0 border-l border-border">
-                      {localPerson.education.map((edu) => {
-                        const degreeLine = [edu.degree, edu.field]
-                          .filter(Boolean)
-                          .join(", ");
-                        return (
+                {localPerson.experiences.length > 0 ? (
+                  <>
+                    <Separator />
+                    <section className="space-y-3">
+                      <h3 className="flex items-center gap-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                        <Briefcase className="size-3.5" />
+                        Experience
+                      </h3>
+                      <ol className="relative ml-3 space-y-0 border-l border-border">
+                        {localPerson.experiences.map((exp) => (
                           <li
-                            key={edu.id}
+                            key={exp.id}
                             className="relative pb-5 pl-6 last:pb-0"
                           >
                             <span className="absolute top-1 -left-[9px] flex size-4 items-center justify-center rounded-full bg-background ring-2 ring-border">
-                              <GraduationCap className="size-2.5 text-muted-foreground" />
+                              <Building2 className="size-2.5 text-muted-foreground" />
                             </span>
                             <div className="flex gap-3">
                               <CompanyLogo
-                                name={edu.schoolName}
-                                domain={edu.schoolDomain}
+                                name={exp.companyName}
+                                domain={exp.companyDomain}
                                 size={36}
                               />
                               <div className="min-w-0 flex-1">
-                                <div className="font-medium">
-                                  {edu.schoolName}
+                                <div className="font-medium">{exp.title}</div>
+                                <div className="text-sm text-muted-foreground">
+                                  {exp.companyName}
                                 </div>
-                                {degreeLine ? (
-                                  <div className="text-sm text-muted-foreground">
-                                    {degreeLine}
-                                  </div>
-                                ) : null}
                                 <div className="mt-0.5 text-xs text-muted-foreground">
                                   {formatTimelineRange(
-                                    edu.startDate,
-                                    edu.endDate,
+                                    exp.startDate,
+                                    exp.endDate,
+                                    exp.isCurrent,
                                   )}
                                 </div>
-                                {edu.description ? (
+                                {exp.description ? (
                                   <p className="mt-1.5 text-sm text-muted-foreground">
-                                    {edu.description}
+                                    {exp.description}
                                   </p>
                                 ) : null}
                               </div>
                             </div>
                           </li>
-                        );
-                      })}
-                    </ol>
-                  )}
-                </section>
+                        ))}
+                      </ol>
+                    </section>
+                  </>
+                ) : null}
+
+                {localPerson.education.length > 0 ? (
+                  <>
+                    <Separator />
+                    <section className="space-y-3">
+                      <h3 className="flex items-center gap-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                        <GraduationCap className="size-3.5" />
+                        Education
+                      </h3>
+                      <ol className="relative ml-3 space-y-0 border-l border-border">
+                        {localPerson.education.map((edu) => {
+                          const degreeLine = [edu.degree, edu.field]
+                            .filter(Boolean)
+                            .join(", ");
+                          return (
+                            <li
+                              key={edu.id}
+                              className="relative pb-5 pl-6 last:pb-0"
+                            >
+                              <span className="absolute top-1 -left-[9px] flex size-4 items-center justify-center rounded-full bg-background ring-2 ring-border">
+                                <GraduationCap className="size-2.5 text-muted-foreground" />
+                              </span>
+                              <div className="flex gap-3">
+                                <CompanyLogo
+                                  name={edu.schoolName}
+                                  domain={edu.schoolDomain}
+                                  size={36}
+                                />
+                                <div className="min-w-0 flex-1">
+                                  <div className="font-medium">
+                                    {edu.schoolName}
+                                  </div>
+                                  {degreeLine ? (
+                                    <div className="text-sm text-muted-foreground">
+                                      {degreeLine}
+                                    </div>
+                                  ) : null}
+                                  <div className="mt-0.5 text-xs text-muted-foreground">
+                                    {formatTimelineRange(
+                                      edu.startDate,
+                                      edu.endDate,
+                                    )}
+                                  </div>
+                                  {edu.description ? (
+                                    <p className="mt-1.5 text-sm text-muted-foreground">
+                                      {edu.description}
+                                    </p>
+                                  ) : null}
+                                </div>
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ol>
+                    </section>
+                  </>
+                ) : null}
 
                 {(localPerson.rawText || localPerson.notes) && (
                   <>
