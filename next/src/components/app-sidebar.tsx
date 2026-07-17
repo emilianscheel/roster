@@ -74,12 +74,9 @@ export function AppSidebar({ globalStats }: AppSidebarProps) {
       <SidebarHeader className="px-3 py-4">
         <Link
           href="/"
-          className="font-heading flex items-center gap-2 text-lg tracking-tight"
+          className="font-instrument text-2xl tracking-tight"
         >
-          <span className="flex size-7 items-center justify-center rounded-md bg-foreground text-background text-xs font-sans">
-            R
-          </span>
-          <span>Roster</span>
+          Roster
         </Link>
       </SidebarHeader>
       <SidebarContent className="relative overflow-hidden">
@@ -118,6 +115,18 @@ export function AppSidebar({ globalStats }: AppSidebarProps) {
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   ) : null}
+                  {!roleId
+                    ? items
+                        .filter((item) => item.id === "new")
+                        .map((item) => (
+                          <NavMenuItem
+                            key={item.href}
+                            item={item}
+                            pathname={pathname}
+                            stat={stats[item.id]}
+                          />
+                        ))
+                    : null}
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       tooltip="Search"
@@ -140,14 +149,16 @@ export function AppSidebar({ globalStats }: AppSidebarProps) {
                       </KbdGroup>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
-                  {items.map((item) => (
-                    <NavMenuItem
-                      key={item.href}
-                      item={item}
-                      pathname={pathname}
-                      stat={stats[item.id]}
-                    />
-                  ))}
+                  {items
+                    .filter((item) => item.id !== "new")
+                    .map((item) => (
+                      <NavMenuItem
+                        key={item.href}
+                        item={item}
+                        pathname={pathname}
+                        stat={stats[item.id]}
+                      />
+                    ))}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>

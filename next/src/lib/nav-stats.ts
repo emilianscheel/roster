@@ -11,6 +11,7 @@ import {
   zeroCalls,
 } from "@/lib/db/schema";
 import type { NavItemId } from "@/lib/nav";
+import { getZeroToolCount } from "@/lib/zero-tools";
 
 export type NavStats = Partial<Record<NavItemId, string>>;
 
@@ -71,6 +72,7 @@ export async function getGlobalNavStats(orgId: string): Promise<NavStats> {
     roles: String(roleCount?.count ?? 0),
     people: String(peopleCount?.count ?? 0),
     approvals: String(pendingCount),
+    tools: String(getZeroToolCount()),
     arena: String(arenaCount?.count ?? 0),
     spend: formatSpendDollars(Number(spend?.total || 0)),
     knowledge: String(knowledgeCount?.count ?? 0),

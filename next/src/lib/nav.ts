@@ -14,6 +14,7 @@ import {
   Fingerprint,
   Mail,
   Trophy,
+  Wrench,
 } from "lucide-react";
 
 export type NavItemId =
@@ -22,6 +23,7 @@ export type NavItemId =
   | "roles"
   | "people"
   | "approvals"
+  | "tools"
   | "arena"
   | "spend"
   | "knowledge"
@@ -42,11 +44,12 @@ export type NavItem = {
 };
 
 export const globalNav: NavItem[] = [
+  { id: "new", title: "New Role", href: "/new", icon: Plus },
   { id: "home", title: "What to do?", href: "/", icon: LayoutDashboard },
-  { id: "new", title: "New", href: "/new", icon: Plus },
   { id: "roles", title: "Roles", href: "/roles", icon: Briefcase },
   { id: "people", title: "People", href: "/people", icon: Users },
   { id: "approvals", title: "Approvals", href: "/approvals", icon: ShieldCheck },
+  { id: "tools", title: "Tools", href: "/tools", icon: Wrench },
   { id: "arena", title: "Arena", href: "/arena", icon: Swords },
   { id: "spend", title: "Spend", href: "/spend", icon: Wallet },
   { id: "knowledge", title: "Best Practices", href: "/knowledge", icon: BookOpen },
