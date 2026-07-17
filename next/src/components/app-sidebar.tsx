@@ -12,7 +12,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarRail,
 } from "@/components/ui/sidebar";
 import { globalNav, roleNav } from "@/lib/nav";
 import { authClient } from "@/lib/auth-client";
@@ -26,18 +25,18 @@ export function AppSidebar() {
   const items = roleId ? roleNav(roleId) : globalNav;
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="none" className="h-svh border-r">
       <SidebarHeader className="px-3 py-4">
         <Link href="/" className="font-heading flex items-center gap-2 text-lg tracking-tight">
           <span className="flex size-7 items-center justify-center rounded-md bg-foreground text-background text-xs font-sans">
             R
           </span>
-          <span className="group-data-[collapsible=icon]:hidden">Roster</span>
+          <span>Roster</span>
         </Link>
         {roleId ? (
           <Link
             href="/roles"
-            className="group-data-[collapsible=icon]:hidden text-xs text-muted-foreground hover:text-foreground"
+            className="text-xs text-muted-foreground hover:text-foreground"
           >
             ← Roles
           </Link>
@@ -74,13 +73,20 @@ export function AppSidebar() {
           variant="ghost"
           size="sm"
           className="w-full justify-start gap-2"
-          onClick={() => authClient.signOut({ fetchOptions: { onSuccess: () => { window.location.href = "/sign-in"; } } })}
+          onClick={() =>
+            authClient.signOut({
+              fetchOptions: {
+                onSuccess: () => {
+                  window.location.href = "/sign-in";
+                },
+              },
+            })
+          }
         >
           <LogOut className="size-4" />
-          <span className="group-data-[collapsible=icon]:hidden">Sign out</span>
+          <span>Sign out</span>
         </Button>
       </SidebarFooter>
-      <SidebarRail />
     </Sidebar>
   );
 }

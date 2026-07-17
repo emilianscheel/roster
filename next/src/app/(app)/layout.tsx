@@ -1,7 +1,6 @@
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { requireSession } from "@/lib/auth/session";
-import { Separator } from "@/components/ui/separator";
 
 export default async function AppLayout({
   children,
@@ -11,14 +10,10 @@ export default async function AppLayout({
   await requireSession();
 
   return (
-    <SidebarProvider>
+    <SidebarProvider className="min-h-svh">
       <AppSidebar />
-      <SidebarInset>
-        <header className="flex h-12 shrink-0 items-center gap-2 border-b px-3">
-          <SidebarTrigger />
-          <Separator orientation="vertical" className="mr-1 h-4" />
-        </header>
-        <div className="flex-1 p-4 md:p-6">{children}</div>
+      <SidebarInset className="min-h-svh">
+        <div className="flex min-h-svh flex-1 flex-col p-4 md:p-6">{children}</div>
       </SidebarInset>
     </SidebarProvider>
   );

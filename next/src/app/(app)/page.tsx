@@ -99,7 +99,7 @@ export default async function CommandPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-lg font-semibold">Command</h1>
+      <h1 className="text-lg font-semibold">What to do?</h1>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {tiles.map((t) => (
           <Link

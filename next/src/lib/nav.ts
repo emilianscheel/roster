@@ -24,14 +24,14 @@ export type NavItem = {
 };
 
 export const globalNav: NavItem[] = [
-  { title: "Command", href: "/", icon: LayoutDashboard },
+  { title: "What to do?", href: "/", icon: LayoutDashboard },
   { title: "New", href: "/new", icon: Plus },
   { title: "Roles", href: "/roles", icon: Briefcase },
   { title: "People", href: "/people", icon: Users },
   { title: "Approvals", href: "/approvals", icon: ShieldCheck },
   { title: "Arena", href: "/arena", icon: Swords },
   { title: "Spend", href: "/spend", icon: Wallet },
-  { title: "Knowledge", href: "/knowledge", icon: BookOpen },
+  { title: "Best Practices", href: "/knowledge", icon: BookOpen },
   { title: "Agent", href: "/agent", icon: Bot },
 ];
 

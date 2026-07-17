@@ -14,7 +14,7 @@ export default async function KnowledgePage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-semibold">Knowledge</h1>
+      <h1 className="text-lg font-semibold">Best Practices</h1>
       <div className="space-y-3">
         {snippets.length === 0 ? (
           <p className="text-sm text-muted-foreground">No snippets yet</p>
