@@ -75,7 +75,7 @@ export function AppSidebar({ globalStats }: AppSidebarProps) {
     <Sidebar collapsible="none" className="h-svh border-r">
       <SidebarHeader className="px-3 py-4">
         <Link
-          href="/"
+          href="/home"
           className="font-instrument text-2xl tracking-tight"
         >
           Roster
@@ -202,8 +202,8 @@ function NavMenuItem({
   stat?: string;
 }) {
   const active =
-    item.href === "/"
-      ? pathname === "/"
+    item.href === "/home"
+      ? pathname === "/home"
       : pathname === item.href || pathname.startsWith(`${item.href}/`);
 
   return (

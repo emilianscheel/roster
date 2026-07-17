@@ -6,7 +6,7 @@ export default async function SignInPage() {
   // Only bounce away when the session is actually valid — never trust a bare cookie.
   const session = await getOptionalSession();
   if (session?.user) {
-    redirect("/");
+    redirect("/home");
   }
 
   return (

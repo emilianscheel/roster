@@ -84,7 +84,7 @@ export function SignInForm() {
           return;
         }
         writeLastEmail(target);
-        window.location.href = "/";
+        window.location.href = "/home";
         return;
       }
 
@@ -97,7 +97,7 @@ export function SignInForm() {
         return;
       }
       writeLastEmail(target);
-      window.location.href = "/";
+      window.location.href = "/home";
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed");
     } finally {
