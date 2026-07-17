@@ -190,14 +190,18 @@ export function ZeroCallsTable({ calls }: { calls: ZeroCall[] }) {
                   <div className="truncate font-medium">
                     {humanizeCapability(call.capability)}
                   </div>
-                  <div className="truncate text-xs text-muted-foreground">
-                    {humanizeService(call.service)}
-                    <span className="mx-1.5 text-border">·</span>
-                    {formatRelativeTime(createdAt)}
+                  <div className="flex min-w-0 items-center gap-2.5 truncate text-xs text-muted-foreground">
+                    <span className="truncate">{humanizeService(call.service)}</span>
+                    <span className="text-border" aria-hidden>
+                      ·
+                    </span>
+                    <span className="shrink-0">{formatRelativeTime(createdAt)}</span>
                     {call.latencyMs > 0 ? (
                       <>
-                        <span className="mx-1.5 text-border">·</span>
-                        {call.latencyMs}ms
+                        <span className="text-border" aria-hidden>
+                          ·
+                        </span>
+                        <span className="shrink-0">{call.latencyMs}ms</span>
                       </>
                     ) : null}
                   </div>
