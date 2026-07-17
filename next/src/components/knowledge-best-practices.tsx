@@ -75,6 +75,7 @@ export function KnowledgeBestPractices({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [markdown, setMarkdown] = useState("");
+  const [dumpText, setDumpText] = useState("");
   const [saving, setSaving] = useState(false);
   const [refiningId, setRefiningId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -98,6 +99,7 @@ export function KnowledgeBestPractices({
     setEditingId(null);
     setTitle("");
     setMarkdown("");
+    setDumpText("");
     setDrawerOpen(true);
   }
 
@@ -106,35 +108,54 @@ export function KnowledgeBestPractices({
     setEditingId(snippet.id);
     setTitle(snippet.title);
     setMarkdown(snippet.markdown);
+    setDumpText("");
     setDrawerOpen(true);
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (saving) return;
+
+    if (mode === "create") {
+      const text = dumpText.trim();
+      if (!text) return;
+
+      setSaving(true);
+      try {
+        const res = await fetch("/api/knowledge/structure", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data.error || "Failed to structure best practice");
+        }
+        setDrawerOpen(false);
+        router.refresh();
+        toast.success("Best practice added");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to save");
+      } finally {
+        setSaving(false);
+      }
+      return;
+    }
+
     const nextTitle = title.trim();
     const nextMarkdown = markdown.trim();
-    if (!nextTitle || !nextMarkdown || saving) return;
+    if (!nextTitle || !nextMarkdown) return;
 
     setSaving(true);
     try {
-      const res =
-        mode === "create"
-          ? await fetch("/api/knowledge", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                title: nextTitle,
-                markdown: nextMarkdown,
-              }),
-            })
-          : await fetch(`/api/knowledge/${editingId}`, {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                title: nextTitle,
-                markdown: nextMarkdown,
-              }),
-            });
+      const res = await fetch(`/api/knowledge/${editingId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: nextTitle,
+          markdown: nextMarkdown,
+        }),
+      });
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -143,6 +164,7 @@ export function KnowledgeBestPractices({
 
       setDrawerOpen(false);
       router.refresh();
+      toast.success("Best practice updated");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to save");
     } finally {
@@ -197,6 +219,9 @@ export function KnowledgeBestPractices({
     }
   }
 
+  const createDisabled = saving || !dumpText.trim();
+  const editDisabled = saving || !title.trim() || !markdown.trim();
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
@@ -227,7 +252,7 @@ export function KnowledgeBestPractices({
             return (
               <article
                 key={s.id}
-                className="flex flex-col gap-2 rounded-lg border border-border p-4"
+                className="relative rounded-lg border border-border p-4 pb-12"
               >
                 <div className="flex items-center justify-between gap-2">
                   <h2 className="font-medium">{s.title}</h2>
@@ -235,10 +260,10 @@ export function KnowledgeBestPractices({
                     <Badge variant="secondary">{s.tool}</Badge>
                   ) : null}
                 </div>
-                <pre className="whitespace-pre-wrap font-sans text-sm text-muted-foreground">
+                <pre className="mt-2 whitespace-pre-wrap font-sans text-sm text-muted-foreground">
                   {s.markdown}
                 </pre>
-                <div className="flex justify-end gap-0.5 pt-1">
+                <div className="absolute right-2 bottom-2 flex gap-0.5">
                   <IconAction
                     label="Edit"
                     disabled={busy}
@@ -291,44 +316,67 @@ export function KnowledgeBestPractices({
               </DrawerTitle>
               <DrawerDescription>
                 {mode === "create"
-                  ? "Capture a reusable recruiting practice for your org."
+                  ? "Paste or jot a recruiting practice. AI will structure it for your org."
                   : "Update the title and body, then save."}
               </DrawerDescription>
             </DrawerHeader>
 
             <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4">
-              <div className="space-y-1.5">
-                <label htmlFor="bp-title" className="text-sm font-medium">
-                  Title
-                </label>
-                <Input
-                  id="bp-title"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Short title"
-                  required
-                  autoFocus
-                />
-              </div>
-              <div className="flex min-h-0 flex-1 flex-col space-y-1.5">
-                <label htmlFor="bp-markdown" className="text-sm font-medium">
-                  Content
-                </label>
-                <Textarea
-                  id="bp-markdown"
-                  value={markdown}
-                  onChange={(e) => setMarkdown(e.target.value)}
-                  placeholder="Markdown best practice…"
-                  required
-                  className="min-h-48 flex-1 resize-none"
-                />
-              </div>
+              {mode === "create" ? (
+                <div className="flex min-h-0 flex-1 flex-col space-y-1.5">
+                  <label htmlFor="bp-dump" className="text-sm font-medium">
+                    Practice dump
+                  </label>
+                  <Textarea
+                    id="bp-dump"
+                    value={dumpText}
+                    onChange={(e) => setDumpText(e.target.value)}
+                    placeholder="Paste or jot a recruiting practice…"
+                    required
+                    autoFocus
+                    className="min-h-64 flex-1 resize-none"
+                    disabled={saving}
+                  />
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-1.5">
+                    <label htmlFor="bp-title" className="text-sm font-medium">
+                      Title
+                    </label>
+                    <Input
+                      id="bp-title"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      placeholder="Short title"
+                      required
+                      autoFocus
+                    />
+                  </div>
+                  <div className="flex min-h-0 flex-1 flex-col space-y-1.5">
+                    <label
+                      htmlFor="bp-markdown"
+                      className="text-sm font-medium"
+                    >
+                      Content
+                    </label>
+                    <Textarea
+                      id="bp-markdown"
+                      value={markdown}
+                      onChange={(e) => setMarkdown(e.target.value)}
+                      placeholder="Markdown best practice…"
+                      required
+                      className="min-h-48 flex-1 resize-none"
+                    />
+                  </div>
+                </>
+              )}
             </div>
 
             <DrawerFooter>
               <Button
                 type="submit"
-                disabled={saving || !title.trim() || !markdown.trim()}
+                disabled={mode === "create" ? createDisabled : editDisabled}
               >
                 {saving ? (
                   <>
@@ -336,10 +384,10 @@ export function KnowledgeBestPractices({
                       data-icon="inline-start"
                       className="animate-spin"
                     />
-                    Saving…
+                    {mode === "create" ? "Structuring…" : "Saving…"}
                   </>
                 ) : mode === "create" ? (
-                  "Add best practice"
+                  "Structure & add"
                 ) : (
                   "Save changes"
                 )}

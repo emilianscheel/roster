@@ -83,13 +83,8 @@ export default async function PeoplePage() {
     }));
 
     return (
-        <div className="space-y-4">
-            <div>
-                <h1 className="text-lg font-semibold">People</h1>
-            </div>
-            <Suspense fallback={<div className="text-sm text-muted-foreground">Loading…</div>}>
-                <PeopleGrid people={peopleData} />
-            </Suspense>
-        </div>
+        <Suspense fallback={<div className="text-sm text-muted-foreground">Loading…</div>}>
+            <PeopleGrid people={peopleData} />
+        </Suspense>
     );
 }
