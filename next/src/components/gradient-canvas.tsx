@@ -317,7 +317,7 @@ export function GradientCanvas({
         className,
       )}
     >
-      <div className="absolute top-0 left-0 h-full w-full">
+      <div className="absolute inset-0 z-0">
         <canvas
           ref={canvasRef}
           data-gtm-webgl
@@ -326,7 +326,7 @@ export function GradientCanvas({
         />
       </div>
       {children ? (
-        <div className="absolute top-0 left-0 h-full w-full">{children}</div>
+        <div className="absolute inset-0 z-10">{children}</div>
       ) : null}
     </div>
   );
