@@ -64,12 +64,12 @@ export function NewRoleInput() {
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-4 px-4">
-      <div className="relative w-full rounded-2xl border border-border bg-background shadow-sm">
+      <div className="relative w-full">
         <Textarea
           value={brief}
           onChange={(e) => setBrief(e.target.value)}
           placeholder="Find a founding infrastructure engineer with production Rust and Kubernetes…"
-          className="min-h-32 resize-none border-0 bg-transparent pb-12 pr-14 text-base shadow-none focus-visible:ring-0"
+          className="min-h-40 resize-none rounded-xl pb-12 pr-14 text-base"
           disabled={busy}
           onKeyDown={(e) => {
             if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
@@ -97,14 +97,14 @@ export function NewRoleInput() {
         </div>
       </div>
 
-      <div className="flex w-full max-w-md flex-col items-stretch gap-1 self-center pt-2">
+      <div className="flex w-full flex-col items-stretch gap-2.5 pt-4">
         {EXAMPLES.map((ex) => (
           <button
             key={ex.label}
             type="button"
             disabled={busy}
             onClick={() => void submit(ex.prompt)}
-            className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-muted disabled:opacity-50"
+            className="group flex items-center gap-3 rounded-xl px-4 py-3 text-left transition-colors hover:bg-muted disabled:opacity-50"
           >
             <ex.icon className="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
             <span className="truncate text-sm text-muted-foreground transition-colors group-hover:text-foreground">
