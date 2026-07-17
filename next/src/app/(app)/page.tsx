@@ -14,7 +14,26 @@ import {
   Wallet,
   BadgeCheck,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+
+type Tile = {
+  label: string;
+  value: string | number;
+  helper: string;
+  action: string;
+  href: string;
+  icon: LucideIcon;
+};
 
 export default async function CommandPage() {
   const { orgId } = await requireSession();
@@ -73,46 +92,83 @@ export default async function CommandPage() {
   const totalSpend = Number(spend?.total || 0);
   const costPerVerified = verified > 0 ? totalSpend / verified : 0;
 
-  const tiles = [
-    { label: "Roles", value: roleCount?.count ?? 0, icon: Briefcase, href: "/roles" },
-    { label: "Candidates", value: discovered, icon: Users, href: "/people" },
-    { label: "Verified", value: verified, icon: BadgeCheck, href: "/roles" },
+  const tiles: Tile[] = [
+    {
+      label: "Roles",
+      value: roleCount?.count ?? 0,
+      helper: "Open roles you can run",
+      action: "Draft a founding eng brief",
+      href: "/new",
+      icon: Briefcase,
+    },
+    {
+      label: "Candidates",
+      value: discovered,
+      helper: "People discovered across roles",
+      action: "Browse the people directory",
+      href: "/people",
+      icon: Users,
+    },
+    {
+      label: "Verified",
+      value: verified,
+      helper: "Cleared evidence threshold",
+      action: "Open roles to review shortlists",
+      href: "/roles",
+      icon: BadgeCheck,
+    },
     {
       label: "Approvals",
       value: pending?.count ?? 0,
-      icon: ShieldCheck,
+      helper: "Waiting on human gate",
+      action: "Clear pending approvals",
       href: "/approvals",
+      icon: ShieldCheck,
     },
     {
       label: "Zero spend",
       value: `$${totalSpend.toFixed(2)}`,
+      helper: "Marketplace spend so far",
+      action: "Audit Zero arena calls",
+      href: "/arena",
       icon: Wallet,
-      href: "/spend",
     },
     {
       label: "Cost / verified",
       value: `$${costPerVerified.toFixed(3)}`,
-      icon: Wallet,
+      helper: "Efficiency of verification",
+      action: "Review spend breakdown",
       href: "/spend",
+      icon: Wallet,
     },
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="flex min-h-0 flex-1 flex-col gap-6">
       <h1 className="text-lg font-semibold">What to do?</h1>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid flex-1 auto-rows-fr gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {tiles.map((t) => (
-          <Link
-            key={t.label}
-            href={t.href}
-            className="flex items-center gap-3 rounded-lg border border-border p-4 transition-colors hover:bg-muted/40"
-          >
-            <t.icon className="size-5 text-muted-foreground" />
-            <div>
-              <div className="text-2xl font-semibold tabular-nums">{t.value}</div>
-              <div className="text-xs text-muted-foreground">{t.label}</div>
-            </div>
-          </Link>
+          <Card key={t.label} className="h-full justify-between">
+            <CardHeader className="flex flex-row items-center gap-2 space-y-0">
+              <t.icon className="size-5 text-muted-foreground" />
+              <CardTitle>{t.label}</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-1 flex-col justify-center gap-1">
+              <div className="text-3xl font-semibold tabular-nums tracking-tight sm:text-4xl">
+                {t.value}
+              </div>
+              <CardDescription>{t.helper}</CardDescription>
+            </CardContent>
+            <CardFooter>
+              <Button
+                render={<Link href={t.href} />}
+                className="w-full"
+                size="lg"
+              >
+                {t.action}
+              </Button>
+            </CardFooter>
+          </Card>
         ))}
       </div>
     </div>
