@@ -9,6 +9,8 @@ import { db } from "@/lib/db";
 import {
   candidates,
   people,
+  personEducation,
+  personExperiences,
   rolePerspectives,
   roleRequirements,
   roles,
@@ -143,8 +145,10 @@ export function createCodingTools(ctx: CodingContext) {
         email: z.string().optional(),
         headline: z.string().optional(),
         location: z.string().optional(),
+        imageUrl: z.string().optional(),
         linkedinUrl: z.string().optional(),
         notes: z.string().optional(),
+        rawText: z.string().optional(),
         links: z.record(z.string(), z.string()).optional(),
       }),
       execute: async (input) => {
@@ -172,7 +176,9 @@ export function createCodingTools(ctx: CodingContext) {
               email: input.email ?? existing.email,
               headline: input.headline ?? existing.headline,
               location: input.location ?? existing.location,
+              imageUrl: input.imageUrl ?? existing.imageUrl,
               notes: input.notes ?? existing.notes,
+              rawText: input.rawText ?? existing.rawText,
               links: { ...(existing.links || {}), ...links },
               lastSeenAt: new Date(),
             })
@@ -199,7 +205,9 @@ export function createCodingTools(ctx: CodingContext) {
                 name: input.name,
                 headline: input.headline ?? byEmail.headline,
                 location: input.location ?? byEmail.location,
+                imageUrl: input.imageUrl ?? byEmail.imageUrl,
                 notes: input.notes ?? byEmail.notes,
+                rawText: input.rawText ?? byEmail.rawText,
                 links: { ...(byEmail.links || {}), ...links },
                 lastSeenAt: new Date(),
               })
@@ -216,10 +224,111 @@ export function createCodingTools(ctx: CodingContext) {
           email: input.email,
           headline: input.headline,
           location: input.location,
+          imageUrl: input.imageUrl,
           notes: input.notes,
+          rawText: input.rawText,
           links,
         });
         return { id, created: true };
+      },
+    }),
+
+    setPersonTimeline: tool({
+      description:
+        "Replace a person's structured career experiences and education history.",
+      inputSchema: z.object({
+        personId: z.string(),
+        experiences: z
+          .array(
+            z.object({
+              companyName: z.string(),
+              companyDomain: z.string().optional(),
+              title: z.string(),
+              startDate: z.string().optional(),
+              endDate: z.string().optional(),
+              isCurrent: z.boolean().optional(),
+              description: z.string().optional(),
+            }),
+          )
+          .default([]),
+        education: z
+          .array(
+            z.object({
+              schoolName: z.string(),
+              schoolDomain: z.string().optional(),
+              degree: z.string().optional(),
+              field: z.string().optional(),
+              startDate: z.string().optional(),
+              endDate: z.string().optional(),
+              description: z.string().optional(),
+            }),
+          )
+          .default([]),
+      }),
+      execute: async ({ personId, experiences, education }) => {
+        const [person] = await db
+          .select()
+          .from(people)
+          .where(
+            and(
+              eq(people.id, personId),
+              eq(people.organizationId, ctx.organizationId),
+            ),
+          )
+          .limit(1);
+        if (!person) return { error: "Person not found" };
+
+        await db
+          .delete(personExperiences)
+          .where(eq(personExperiences.personId, personId));
+        await db
+          .delete(personEducation)
+          .where(eq(personEducation.personId, personId));
+
+        if (experiences.length) {
+          await db.insert(personExperiences).values(
+            experiences.map((e, i) => ({
+              id: crypto.randomUUID(),
+              personId,
+              companyName: e.companyName,
+              companyDomain: e.companyDomain,
+              title: e.title,
+              startDate: e.startDate,
+              endDate: e.endDate,
+              isCurrent: e.isCurrent ?? false,
+              description: e.description,
+              sortOrder: i,
+            })),
+          );
+        }
+
+        if (education.length) {
+          await db.insert(personEducation).values(
+            education.map((e, i) => ({
+              id: crypto.randomUUID(),
+              personId,
+              schoolName: e.schoolName,
+              schoolDomain: e.schoolDomain,
+              degree: e.degree,
+              field: e.field,
+              startDate: e.startDate,
+              endDate: e.endDate,
+              description: e.description,
+              sortOrder: i,
+            })),
+          );
+        }
+
+        await db
+          .update(people)
+          .set({ lastSeenAt: new Date() })
+          .where(eq(people.id, personId));
+
+        return {
+          personId,
+          experiences: experiences.length,
+          education: education.length,
+        };
       },
     }),
 

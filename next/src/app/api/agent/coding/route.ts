@@ -7,7 +7,7 @@ import { getOrgIdForUser } from "@/lib/auth/org";
 import { createCodingTools } from "@/lib/agent/coding";
 import { createAppleSandboxSession } from "@/lib/sandbox/apple-container";
 import { db } from "@/lib/db";
-import { agentMessages, agentSessions, people, roles } from "@/lib/db/schema";
+import { agentMessages, agentSessions, people, personEducation, personExperiences, roles } from "@/lib/db/schema";
 
 export const maxDuration = 120;
 
@@ -153,14 +153,56 @@ async function runDemoAgentTurn(opts: {
       undefined;
     const name = nameMatch?.[1] || "Unknown Person";
     const id = crypto.randomUUID();
+    const headline =
+      text.match(/[—\-–]\s*(.+?)(?:\n|$)/)?.[1]?.trim() ||
+      "Engineer";
     await db.insert(people).values({
       id,
       organizationId: opts.orgId,
       name,
+      headline,
+      location: "San Francisco Bay Area",
+      email: `${name.toLowerCase().replace(/\s+/g, ".")}@example.com`,
       notes: text.slice(0, 500),
+      rawText: text.slice(0, 4000),
       links: linkedin ? { linkedin } : {},
     });
-    return `Stored **${name}** in the people database (\`${id}\`).\n\nDemo mode — no AI_GATEWAY_API_KEY.`;
+    await db.insert(personExperiences).values([
+      {
+        id: crypto.randomUUID(),
+        personId: id,
+        companyName: "Stripe",
+        companyDomain: "stripe.com",
+        title: "Staff Software Engineer",
+        startDate: "2022-01",
+        isCurrent: true,
+        description: "Infrastructure and developer platform.",
+        sortOrder: 0,
+      },
+      {
+        id: crypto.randomUUID(),
+        personId: id,
+        companyName: "Airbnb",
+        companyDomain: "airbnb.com",
+        title: "Senior Software Engineer",
+        startDate: "2018-06",
+        endDate: "2021-12",
+        description: "Payments and reliability.",
+        sortOrder: 1,
+      },
+    ]);
+    await db.insert(personEducation).values({
+      id: crypto.randomUUID(),
+      personId: id,
+      schoolName: "Stanford University",
+      schoolDomain: "stanford.edu",
+      degree: "B.S.",
+      field: "Computer Science",
+      startDate: "2014",
+      endDate: "2018",
+      sortOrder: 0,
+    });
+    return `Stored **${name}** in the people database (\`${id}\`) with sample career and education.\n\nDemo mode — no AI_GATEWAY_API_KEY.`;
   }
 
   if (/list roles|show roles/i.test(lower)) {

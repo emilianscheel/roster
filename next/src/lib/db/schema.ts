@@ -224,7 +224,11 @@ export const people = pgTable(
     email: text("email"),
     headline: text("headline"),
     location: text("location"),
+    imageUrl: text("image_url"),
     links: jsonb("links").$type<Record<string, string>>().default({}),
+    /** Full plain-text profile dump (e.g. LinkedIn paste). */
+    rawText: text("raw_text"),
+    /** Recruiter-facing free-form notes. */
     notes: text("notes"),
     firstSeenRoleId: text("first_seen_role_id"),
     lastSeenAt: timestamp("last_seen_at").notNull().defaultNow(),
@@ -234,6 +238,47 @@ export const people = pgTable(
     index("people_org_idx").on(t.organizationId),
     index("people_name_idx").on(t.name),
   ],
+);
+
+export const personExperiences = pgTable(
+  "person_experiences",
+  {
+    id: text("id").primaryKey(),
+    personId: text("person_id")
+      .notNull()
+      .references(() => people.id, { onDelete: "cascade" }),
+    companyName: text("company_name").notNull(),
+    companyDomain: text("company_domain"),
+    title: text("title").notNull(),
+    /** LinkedIn-style date, e.g. "2021-03" or "Mar 2021". */
+    startDate: text("start_date"),
+    endDate: text("end_date"),
+    isCurrent: boolean("is_current").notNull().default(false),
+    description: text("description"),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("person_experiences_person_idx").on(t.personId)],
+);
+
+export const personEducation = pgTable(
+  "person_education",
+  {
+    id: text("id").primaryKey(),
+    personId: text("person_id")
+      .notNull()
+      .references(() => people.id, { onDelete: "cascade" }),
+    schoolName: text("school_name").notNull(),
+    schoolDomain: text("school_domain"),
+    degree: text("degree"),
+    field: text("field"),
+    startDate: text("start_date"),
+    endDate: text("end_date"),
+    description: text("description"),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("person_education_person_idx").on(t.personId)],
 );
 
 export const pipelineStageEnum = pgEnum("pipeline_stage", [
@@ -474,4 +519,27 @@ export const candidatesRelations = relations(candidates, ({ one, many }) => ({
   role: one(roles, { fields: [candidates.roleId], references: [roles.id] }),
   person: one(people, { fields: [candidates.personId], references: [people.id] }),
   evidence: many(evidence),
+}));
+
+export const peopleRelations = relations(people, ({ many }) => ({
+  experiences: many(personExperiences),
+  education: many(personEducation),
+  candidates: many(candidates),
+}));
+
+export const personExperiencesRelations = relations(
+  personExperiences,
+  ({ one }) => ({
+    person: one(people, {
+      fields: [personExperiences.personId],
+      references: [people.id],
+    }),
+  }),
+);
+
+export const personEducationRelations = relations(personEducation, ({ one }) => ({
+  person: one(people, {
+    fields: [personEducation.personId],
+    references: [people.id],
+  }),
 }));
