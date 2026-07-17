@@ -30,7 +30,6 @@ import {
   type PipelineCandidate,
 } from "@/components/pipeline/types";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import {
   updateCandidateStage,
@@ -85,7 +84,7 @@ function PipelineColumn({
           {stage} · {items.length}
         </div>
       </div>
-      <ScrollArea className="min-h-0 flex-1">
+      <div className="min-h-0 flex-1 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         <div ref={setNodeRef} className="min-h-24 space-y-2 px-2 pb-2">
           <SortableContext
             items={items.map((c) => c.id)}
@@ -100,7 +99,7 @@ function PipelineColumn({
             ))}
           </SortableContext>
         </div>
-      </ScrollArea>
+      </div>
     </div>
   );
 }

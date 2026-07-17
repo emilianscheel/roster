@@ -1,9 +1,13 @@
 import Link from "next/link";
-import { desc, eq } from "drizzle-orm";
+import { Suspense } from "react";
+import { desc, eq, inArray, sql } from "drizzle-orm";
+import { Plus } from "lucide-react";
 import { requireSession } from "@/lib/auth/session";
 import { db } from "@/lib/db";
-import { roles } from "@/lib/db/schema";
-import { Badge } from "@/components/ui/badge";
+import { candidates, roleRequirements, roles } from "@/lib/db/schema";
+import { RolesGrid } from "@/components/roles/roles-grid";
+import type { RoleListItem } from "@/components/roles/types";
+import { Button } from "@/components/ui/button";
 
 export default async function RolesPage() {
   const { orgId } = await requireSession();
@@ -13,40 +17,70 @@ export default async function RolesPage() {
     .where(eq(roles.organizationId, orgId))
     .orderBy(desc(roles.createdAt));
 
+  const roleIds = list.map((r) => r.id);
+
+  const [candidateCounts, requirementCounts] =
+    roleIds.length === 0
+      ? [[], []]
+      : await Promise.all([
+          db
+            .select({
+              roleId: candidates.roleId,
+              count: sql<number>`count(*)::int`,
+            })
+            .from(candidates)
+            .where(inArray(candidates.roleId, roleIds))
+            .groupBy(candidates.roleId),
+          db
+            .select({
+              roleId: roleRequirements.roleId,
+              count: sql<number>`count(*)::int`,
+            })
+            .from(roleRequirements)
+            .where(inArray(roleRequirements.roleId, roleIds))
+            .groupBy(roleRequirements.roleId),
+        ]);
+
+  const candidatesByRole = new Map(
+    candidateCounts.map((row) => [row.roleId, row.count]),
+  );
+  const requirementsByRole = new Map(
+    requirementCounts.map((row) => [row.roleId, row.count]),
+  );
+
+  const rolesData: RoleListItem[] = list.map((role) => ({
+    id: role.id,
+    title: role.title,
+    status: role.status,
+    seniority: role.seniority,
+    location: role.location,
+    spentCents: role.spentCents,
+    budgetCents: role.budgetCents,
+    candidateCount: candidatesByRole.get(role.id) ?? 0,
+    requirementCount: requirementsByRole.get(role.id) ?? 0,
+  }));
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <h1 className="text-lg font-semibold">Roles</h1>
-        <Link
-          href="/new"
-          className="text-sm text-muted-foreground hover:text-foreground"
+        <Button
+          size="sm"
+          nativeButton={false}
+          render={<Link href="/new" />}
+          className="gap-1"
         >
-          + New
-        </Link>
+          <Plus data-icon="inline-start" />
+          New
+        </Button>
       </div>
-      <div className="divide-y rounded-lg border border-border">
-        {list.length === 0 ? (
-          <div className="p-8 text-center text-sm text-muted-foreground">
-            No roles
-          </div>
-        ) : (
-          list.map((role) => (
-            <Link
-              key={role.id}
-              href={`/roles/${role.id}/live`}
-              className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-muted/40"
-            >
-              <div className="min-w-0">
-                <div className="truncate font-medium">{role.title}</div>
-                <div className="truncate text-xs text-muted-foreground">
-                  ${(role.spentCents / 100).toFixed(2)} spent
-                </div>
-              </div>
-              <Badge variant="secondary">{role.status}</Badge>
-            </Link>
-          ))
-        )}
-      </div>
+      <Suspense
+        fallback={
+          <div className="text-sm text-muted-foreground">Loading…</div>
+        }
+      >
+        <RolesGrid roles={rolesData} />
+      </Suspense>
     </div>
   );
 }
