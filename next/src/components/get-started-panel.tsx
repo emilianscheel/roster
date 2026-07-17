@@ -6,17 +6,15 @@ import { AnimatePresence, motion, MotionConfig } from "motion/react";
 import { ExternalLink, Loader2, Check } from "lucide-react";
 import { toast } from "sonner";
 import { Button, buttonVariants } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-
-type ZeroStatus = {
-  connected: boolean;
-  liveEnabled: boolean;
-  zeroUserId: string | null;
-  zeroEmail: string | null;
-  walletAddress: string | null;
-  balance: string | null;
-  demoMode: boolean;
-};
+import type { ZeroPublicStatus } from "@/lib/zero/types";
 
 type DeviceStart = {
   deviceCode: string;
@@ -56,15 +54,23 @@ function isStepDone(
   return step3Done;
 }
 
+function formatBalance(balance: string | null) {
+  if (balance == null) return "—";
+  const n = Number.parseFloat(balance);
+  if (!Number.isFinite(n)) return "—";
+  return `$${n.toFixed(2)}`;
+}
+
 export function GetStartedPanel({
   initialStatus,
 }: {
-  initialStatus: ZeroStatus;
+  initialStatus: ZeroPublicStatus;
 }) {
   const [status, setStatus] = useState(initialStatus);
   const [device, setDevice] = useState<DeviceStart | null>(null);
   const [connecting, setConnecting] = useState(false);
   const [funding, setFunding] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [togglingLive, setTogglingLive] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -115,11 +121,37 @@ export function GetStartedPanel({
     }
   }, [step1Done, step2Done, step3Done, pinned, activeStep]);
 
-  const refreshStatus = useCallback(async () => {
-    const res = await fetch("/api/zero/status");
-    if (!res.ok) return;
-    const data = (await res.json()) as ZeroStatus;
-    setStatus(data);
+  const refreshStatus = useCallback(async (opts?: { quiet?: boolean }) => {
+    setRefreshing(true);
+    try {
+      const res = await fetch("/api/zero/status");
+      const data = (await res.json()) as ZeroPublicStatus & { error?: string };
+      if (!res.ok) {
+        throw new Error(data.error || "Could not refresh status");
+      }
+      setStatus(data);
+      if (data.balanceError) {
+        if (!opts?.quiet) {
+          toast.error(data.balanceError);
+        }
+        return data;
+      }
+      if (!opts?.quiet) {
+        toast.success(
+          data.balance != null
+            ? `Balance ${formatBalance(data.balance)}`
+            : "Balance updated",
+        );
+      }
+      return data;
+    } catch (err) {
+      if (!opts?.quiet) {
+        toast.error(err instanceof Error ? err.message : "Refresh failed");
+      }
+      return null;
+    } finally {
+      setRefreshing(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -173,7 +205,7 @@ export function GetStartedPanel({
             return;
           }
           toast.success("Zero account connected");
-          await refreshStatus();
+          await refreshStatus({ quiet: true });
         } catch (err) {
           if (pollRef.current) clearInterval(pollRef.current);
           pollRef.current = null;
@@ -198,7 +230,7 @@ export function GetStartedPanel({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Could not create funding link");
       window.open(data.fundingUrl as string, "_blank", "noopener,noreferrer");
-      toast.message("Complete funding in the new tab, then refresh balance.");
+      toast.message("Complete funding in the new tab, then refresh.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Funding failed");
     } finally {
@@ -217,7 +249,7 @@ export function GetStartedPanel({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Could not update live mode");
       toast.success(enabled ? "Live Zero calls enabled" : "Back to demo mode");
-      await refreshStatus();
+      await refreshStatus({ quiet: true });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Update failed");
     } finally {
@@ -234,7 +266,7 @@ export function GetStartedPanel({
       toast.success("Disconnected from Zero");
       setDevice(null);
       setPinned(false);
-      await refreshStatus();
+      await refreshStatus({ quiet: true });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Disconnect failed");
     } finally {
@@ -249,34 +281,11 @@ export function GetStartedPanel({
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className="mx-auto w-full max-w-md space-y-8">
-        <div className="space-y-5">
-          <h1 className="text-lg font-semibold tracking-tight">Get started</h1>
-
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <div
-                className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted"
-                role="progressbar"
-                aria-valuenow={doneCount}
-                aria-valuemin={0}
-                aria-valuemax={3}
-                aria-label="Setup progress"
-              >
-                <motion.div
-                  className="h-full rounded-full bg-primary"
-                  initial={false}
-                  animate={{ width: `${(doneCount / 3) * 100}%` }}
-                  transition={{ type: "spring", stiffness: 260, damping: 28 }}
-                />
-              </div>
-              <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-                {doneCount} / 3
-              </span>
-            </div>
-
-            <div className="flex items-center gap-1">
-              {STEPS.map((step, i) => {
+      <div className="flex min-h-full w-full flex-1 items-center justify-center">
+        <div className="w-full max-w-sm space-y-3">
+          <div className="space-y-2 px-0.5">
+            <div className="flex items-center justify-between gap-2">
+              {STEPS.map((step) => {
                 const done = isStepDone(
                   step.id,
                   step1Done,
@@ -290,235 +299,244 @@ export function GetStartedPanel({
                   (activeStep === "done" && step.id === 3 && done);
 
                 return (
-                  <div key={step.id} className="flex min-w-0 flex-1 items-center">
-                    {i > 0 ? (
-                      <div
-                        className={cn(
-                          "mx-1 h-px flex-1",
-                          done ||
-                            isStepDone(
-                              STEPS[i - 1]!.id,
-                              step1Done,
-                              step2Done,
-                              step3Done,
-                            )
-                            ? "bg-primary/40"
-                            : "bg-border",
-                        )}
-                      />
-                    ) : null}
-                    <button
-                      type="button"
-                      disabled={!selectable}
-                      onClick={() => selectStep(step.id)}
+                  <button
+                    key={step.id}
+                    type="button"
+                    disabled={!selectable}
+                    onClick={() => selectStep(step.id)}
+                    className={cn(
+                      "flex items-center gap-1.5 text-xs transition-colors",
+                      selectable
+                        ? "cursor-pointer"
+                        : "cursor-not-allowed opacity-40",
+                      current ? "text-foreground" : "text-muted-foreground",
+                    )}
+                  >
+                    <span
                       className={cn(
-                        "flex items-center gap-1.5 rounded-md px-1.5 py-1 text-xs transition-colors",
-                        selectable
-                          ? "cursor-pointer"
-                          : "cursor-not-allowed opacity-40",
-                        current
-                          ? "text-foreground"
-                          : "text-muted-foreground",
+                        "flex size-5 items-center justify-center rounded-full text-[10px] font-medium",
+                        done
+                          ? "bg-primary text-primary-foreground"
+                          : current
+                            ? "bg-foreground text-background"
+                            : "bg-muted text-muted-foreground",
                       )}
                     >
-                      <span
-                        className={cn(
-                          "flex size-5 items-center justify-center rounded-full text-[10px] font-medium",
-                          done
-                            ? "bg-primary text-primary-foreground"
-                            : current
-                              ? "bg-foreground text-background"
-                              : "bg-muted text-muted-foreground",
-                        )}
-                      >
-                        {done ? (
-                          <motion.span
-                            key="check"
-                            initial={{ scale: 0.5, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            transition={{
-                              type: "spring",
-                              stiffness: 400,
-                              damping: 20,
-                            }}
-                            className="flex"
-                          >
-                            <Check className="size-3" />
-                          </motion.span>
-                        ) : (
-                          step.id
-                        )}
-                      </span>
-                      <span
-                        className={cn(
-                          "hidden sm:inline",
-                          current && "font-medium",
-                        )}
-                      >
-                        {step.label}
-                      </span>
-                    </button>
-                  </div>
+                      {done ? (
+                        <motion.span
+                          key="check"
+                          initial={{ scale: 0.5, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          transition={{
+                            type: "spring",
+                            stiffness: 400,
+                            damping: 20,
+                          }}
+                          className="flex"
+                        >
+                          <Check className="size-3" />
+                        </motion.span>
+                      ) : (
+                        step.id
+                      )}
+                    </span>
+                    <span className={cn(current && "font-medium")}>
+                      {step.label}
+                    </span>
+                  </button>
                 );
               })}
             </div>
-          </div>
-        </div>
 
-        <div className="relative min-h-40">
-          <AnimatePresence mode="wait" custom={directionRef.current}>
-            <motion.div
-              key={activeStep}
-              custom={directionRef.current}
-              variants={panelVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-              className="space-y-5"
+            <div
+              className="h-1.5 overflow-hidden rounded-full bg-muted"
+              role="progressbar"
+              aria-valuenow={doneCount}
+              aria-valuemin={0}
+              aria-valuemax={3}
+              aria-label="Setup progress"
             >
-              <h2 className="text-base font-medium">{panelTitle}</h2>
+              <motion.div
+                className="h-full rounded-full bg-primary"
+                initial={false}
+                animate={{ width: `${(doneCount / 3) * 100}%` }}
+                transition={{ type: "spring", stiffness: 260, damping: 28 }}
+              />
+            </div>
+          </div>
 
-              {activeStep === 1 ? (
-                step1Done && !device ? (
-                  <div className="space-y-3">
-                    <p className="text-sm font-medium">
-                      {status.zeroEmail || status.zeroUserId || "Zero user"}
-                    </p>
-                    {status.walletAddress ? (
-                      <p className="font-mono text-xs text-muted-foreground break-all">
-                        {status.walletAddress}
-                      </p>
-                    ) : null}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={disconnecting}
-                      onClick={() => void disconnect()}
-                    >
-                      {disconnecting ? (
-                        <Loader2 className="animate-spin" />
-                      ) : null}
-                      Disconnect
-                    </Button>
-                  </div>
-                ) : device ? (
-                  <div className="space-y-3">
-                    <p className="font-mono text-2xl tracking-[0.2em]">
-                      {device.userCode}
-                    </p>
-                    <a
-                      href={device.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-sm underline underline-offset-2"
-                    >
-                      Open authorization
-                      <ExternalLink className="size-3.5" />
-                    </a>
-                    <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Loader2 className="size-3.5 animate-spin" />
-                      Waiting…
-                    </p>
-                  </div>
-                ) : (
-                  <Button
-                    disabled={connecting}
-                    onClick={() => void startConnect()}
-                  >
-                    {connecting ? <Loader2 className="animate-spin" /> : null}
-                    Connect
-                  </Button>
-                )
-              ) : null}
+          <Card className="shadow-sm">
+            <AnimatePresence mode="wait" custom={directionRef.current}>
+              <motion.div
+                key={activeStep}
+                custom={directionRef.current}
+                variants={panelVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                className="flex flex-col"
+              >
+                <CardHeader className="pb-0">
+                  <CardTitle>{panelTitle}</CardTitle>
+                </CardHeader>
 
-              {activeStep === 2 ? (
-                <div className="space-y-4">
-                  <p className="text-sm tabular-nums">
-                    <span className="text-muted-foreground">Balance </span>
-                    <span className="font-medium">
-                      {status.connected
-                        ? status.balance != null
-                          ? `$${Number.parseFloat(status.balance).toFixed(2)}`
-                          : "—"
-                        : "—"}
-                    </span>
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      disabled={!status.connected || funding}
-                      onClick={() => void fundWallet()}
-                    >
-                      {funding ? <Loader2 className="animate-spin" /> : null}
-                      Add funds
-                    </Button>
-                    <Button
-                      variant="outline"
-                      disabled={!status.connected}
-                      onClick={() => void refreshStatus()}
-                    >
-                      Refresh
-                    </Button>
-                  </div>
-                </div>
-              ) : null}
+                <CardContent className="flex min-h-28 flex-col justify-center gap-3 py-5">
+                  {activeStep === 1 ? (
+                    step1Done && !device ? (
+                      <div className="space-y-1.5">
+                        <p className="text-sm font-medium">
+                          {status.zeroEmail ||
+                            status.zeroUserId ||
+                            "Zero user"}
+                        </p>
+                        {status.walletAddress ? (
+                          <p className="font-mono text-xs text-muted-foreground break-all">
+                            {status.walletAddress}
+                          </p>
+                        ) : null}
+                      </div>
+                    ) : device ? (
+                      <div className="space-y-3">
+                        <p className="font-mono text-2xl tracking-[0.2em]">
+                          {device.userCode}
+                        </p>
+                        <a
+                          href={device.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 text-sm underline underline-offset-2"
+                        >
+                          Open authorization
+                          <ExternalLink className="size-3.5" />
+                        </a>
+                        <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Loader2 className="size-3.5 animate-spin" />
+                          Waiting…
+                        </p>
+                      </div>
+                    ) : null
+                  ) : null}
 
-              {activeStep === 3 ? (
-                <div className="space-y-4">
-                  {status.demoMode ? (
+                  {activeStep === 2 ? (
+                    <p className="text-3xl font-medium tracking-tight tabular-nums">
+                      {formatBalance(status.balance)}
+                    </p>
+                  ) : null}
+
+                  {activeStep === 3 && status.demoMode ? (
                     <p className="text-sm text-muted-foreground">
                       Set <code className="text-xs">DEMO_MODE=false</code> in{" "}
                       <code className="text-xs">.env</code>
                     </p>
                   ) : null}
-                  {status.liveEnabled ? (
-                    <Button
-                      variant="outline"
-                      disabled={togglingLive || !status.connected}
-                      onClick={() => void setLive(false)}
-                    >
-                      {togglingLive ? (
-                        <Loader2 className="animate-spin" />
-                      ) : null}
-                      Disable live
-                    </Button>
-                  ) : (
-                    <Button
-                      disabled={
-                        togglingLive || !status.connected || status.demoMode
-                      }
-                      onClick={() => void setLive(true)}
-                    >
-                      {togglingLive ? (
-                        <Loader2 className="animate-spin" />
-                      ) : null}
-                      Enable live
-                    </Button>
-                  )}
-                </div>
-              ) : null}
+                </CardContent>
 
-              {activeStep === "done" ? (
-                <div className="flex flex-wrap gap-2">
-                  <Link
-                    href="/new"
-                    className={buttonVariants({ size: "default" })}
-                  >
-                    Create a role
-                  </Link>
-                  <Link
-                    href="/tools"
-                    className={buttonVariants({
-                      variant: "outline",
-                      size: "default",
-                    })}
-                  >
-                    Browse tools
-                  </Link>
-                </div>
-              ) : null}
-            </motion.div>
-          </AnimatePresence>
+                {!(activeStep === 1 && device) ? (
+                  <CardFooter className="justify-start gap-2">
+                    {activeStep === 1 ? (
+                      step1Done ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={disconnecting}
+                          onClick={() => void disconnect()}
+                        >
+                          {disconnecting ? (
+                            <Loader2 className="animate-spin" />
+                          ) : null}
+                          Disconnect
+                        </Button>
+                      ) : (
+                        <Button
+                          disabled={connecting}
+                          onClick={() => void startConnect()}
+                        >
+                          {connecting ? (
+                            <Loader2 className="animate-spin" />
+                          ) : null}
+                          Connect
+                        </Button>
+                      )
+                    ) : null}
+
+                    {activeStep === 2 ? (
+                      <>
+                        <Button
+                          disabled={!status.connected || funding}
+                          onClick={() => void fundWallet()}
+                        >
+                          {funding ? (
+                            <Loader2 className="animate-spin" />
+                          ) : null}
+                          Add funds
+                        </Button>
+                        <Button
+                          variant="outline"
+                          disabled={!status.connected || refreshing}
+                          onClick={() => void refreshStatus()}
+                        >
+                          {refreshing ? (
+                            <Loader2 className="animate-spin" />
+                          ) : null}
+                          Refresh
+                        </Button>
+                      </>
+                    ) : null}
+
+                    {activeStep === 3 ? (
+                      status.liveEnabled ? (
+                        <Button
+                          variant="outline"
+                          disabled={togglingLive || !status.connected}
+                          onClick={() => void setLive(false)}
+                        >
+                          {togglingLive ? (
+                            <Loader2 className="animate-spin" />
+                          ) : null}
+                          Disable live
+                        </Button>
+                      ) : (
+                        <Button
+                          disabled={
+                            togglingLive ||
+                            !status.connected ||
+                            status.demoMode
+                          }
+                          onClick={() => void setLive(true)}
+                        >
+                          {togglingLive ? (
+                            <Loader2 className="animate-spin" />
+                          ) : null}
+                          Enable live
+                        </Button>
+                      )
+                    ) : null}
+
+                    {activeStep === "done" ? (
+                      <>
+                        <Link
+                          href="/new"
+                          className={buttonVariants({ size: "default" })}
+                        >
+                          Create a role
+                        </Link>
+                        <Link
+                          href="/tools"
+                          className={buttonVariants({
+                            variant: "outline",
+                            size: "default",
+                          })}
+                        >
+                          Browse tools
+                        </Link>
+                      </>
+                    ) : null}
+                  </CardFooter>
+                ) : null}
+              </motion.div>
+            </AnimatePresence>
+          </Card>
         </div>
       </div>
     </MotionConfig>
