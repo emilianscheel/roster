@@ -66,6 +66,22 @@ export async function getGlobalNavStats(orgId: string): Promise<NavStats> {
   ]);
 
   const pendingCount = pending?.count ?? 0;
+  const spendTotal = Number(spend?.total || 0);
+  const spendLabel = formatSpendDollars(spendTotal);
+
+  // Surface budget pressure when any role is ≥80% utilized.
+  const orgRoles = await db
+    .select({
+      budgetCents: roles.budgetCents,
+      spentCents: roles.spentCents,
+    })
+    .from(roles)
+    .where(eq(roles.organizationId, orgId));
+  let maxUtil = 0;
+  for (const r of orgRoles) {
+    if (r.budgetCents <= 0) continue;
+    maxUtil = Math.max(maxUtil, Math.round((r.spentCents / r.budgetCents) * 100));
+  }
 
   return {
     home: String(pendingCount),
@@ -74,7 +90,7 @@ export async function getGlobalNavStats(orgId: string): Promise<NavStats> {
     approvals: String(pendingCount),
     tools: String(getZeroToolCount()),
     arena: String(arenaCount?.count ?? 0),
-    spend: formatSpendDollars(Number(spend?.total || 0)),
+    spend: maxUtil >= 80 ? `${spendLabel} · ${maxUtil}%` : spendLabel,
     knowledge: String(knowledgeCount?.count ?? 0),
   };
 }
