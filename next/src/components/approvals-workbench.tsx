@@ -250,8 +250,8 @@ export function ApprovalsWorkbench({ tasks }: { tasks: ApprovalTaskView[] }) {
         </Button>
       </div>
 
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-        <div className="relative w-full max-w-sm shrink-0">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="relative min-w-0 flex-1">
           <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={query}
@@ -260,7 +260,11 @@ export function ApprovalsWorkbench({ tasks }: { tasks: ApprovalTaskView[] }) {
             className="pl-8"
           />
         </div>
-        <Tabs value={kindTab} onValueChange={setKindTab} className="min-w-0">
+        <Tabs
+          value={kindTab}
+          onValueChange={setKindTab}
+          className="shrink-0"
+        >
           <TabsList className="max-w-full overflow-x-auto">
             {KIND_TABS.map((tab) => (
               <TabsTrigger key={tab.value} value={tab.value}>

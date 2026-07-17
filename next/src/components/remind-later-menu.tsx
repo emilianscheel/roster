@@ -15,9 +15,7 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -62,28 +60,22 @@ export function RemindLaterMenu({
           <ChevronDown className="size-3.5 opacity-60" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="min-w-48">
-          <DropdownMenuGroup>
-            <DropdownMenuLabel>Relative</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => onRemind(inOneHour())}>
-              In 1 hour
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onRemind(tomorrowNoon())}>
-              Tomorrow
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onRemind(nextWeekNoon())}>
-              Next week
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
+          <DropdownMenuItem onClick={() => onRemind(inOneHour())}>
+            In 1 hour
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onRemind(tomorrowNoon())}>
+            Tomorrow
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onRemind(nextWeekNoon())}>
+            Next week
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuGroup>
-            <DropdownMenuLabel>Absolute</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => onRemind(thisFridayAtNine())}>
-              This Friday 9:00
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onRemind(endOfMonthNoon())}>
-              End of month
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
+          <DropdownMenuItem onClick={() => onRemind(thisFridayAtNine())}>
+            This Friday 9:00
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onRemind(endOfMonthNoon())}>
+            End of month
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={() => {
