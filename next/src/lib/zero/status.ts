@@ -41,16 +41,22 @@ export async function loadZeroPublicStatus(
       };
     }
 
-    // Resolve / provision the managed wallet before reading balance so
-    // signup credits and on-chain USDC are visible after connect.
+    // Session-mode clients have no local account — balance() needs an
+    // explicit address. Resolve / provision the managed wallet first.
     walletAddress = await ensureOrgWalletAddress(orgId, client);
-    try {
-      await client.wallet.address();
-    } catch {
-      // ensureOrgWalletAddress already attempted provision; continue to balance.
+    if (!walletAddress?.startsWith("0x")) {
+      return {
+        ...publicConn,
+        walletAddress,
+        balance: null,
+        demoMode,
+        balanceError: "Could not resolve wallet address",
+      };
     }
 
-    const bal = await client.wallet.balance();
+    const bal = await client.wallet.balance({
+      address: walletAddress as `0x${string}`,
+    });
     balance = bal.amount ?? null;
   } catch (err) {
     balanceError =
