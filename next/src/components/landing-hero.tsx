@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
+import useKeypress from "react-use-keypress";
 import { GradientCanvas } from "@/components/gradient-canvas";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const HEADLINES = [
   "HIRE WITH REAL EVIDENCE",
@@ -19,6 +21,10 @@ const ROTATE_MS = 3000;
 export function LandingHero() {
   const [index, setIndex] = useState(0);
 
+  const advance = () => {
+    setIndex((i) => (i + 1) % HEADLINES.length);
+  };
+
   useEffect(() => {
     const id = window.setInterval(() => {
       setIndex((i) => (i + 1) % HEADLINES.length);
@@ -26,25 +32,27 @@ export function LandingHero() {
     return () => window.clearInterval(id);
   }, [index]);
 
-  const advance = () => {
-    setIndex((i) => (i + 1) % HEADLINES.length);
-  };
+  useKeypress(["Enter", " "], (event) => {
+    const target = event.target as HTMLElement | null;
+    if (target?.closest("a, input, textarea, select")) return;
+    event.preventDefault();
+    advance();
+  });
 
   return (
     <GradientCanvas className="h-svh overflow-hidden">
-      <div className="relative flex h-full w-full flex-col items-center overflow-hidden">
-        <p className="absolute top-10 left-1/2 -translate-x-1/2 font-instrument text-3xl tracking-tight text-white md:top-14">
+      <div className="relative flex h-full w-full flex-col items-center overflow-hidden text-white">
+        <p className="absolute top-20 left-1/2 -translate-x-1/2 font-instrument text-3xl tracking-tight text-white md:top-24 md:text-4xl">
           Roster
         </p>
 
-        <div className="flex flex-1 flex-col items-center justify-center gap-8 px-6">
-          <button
-            type="button"
+        <div className="flex w-full max-w-5xl flex-1 flex-col items-center justify-center gap-10 px-6">
+          <div
+            role="presentation"
             onClick={advance}
-            className="cursor-pointer text-center outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
-            aria-label="Next headline"
+            className="w-full cursor-pointer text-center text-white select-none"
           >
-            <span className="relative flex h-10 w-[min(92vw,36rem)] items-center justify-center">
+            <div className="relative flex min-h-16 w-full items-center justify-center">
               <AnimatePresence mode="wait">
                 <motion.h1
                   key={HEADLINES[index]}
@@ -52,22 +60,23 @@ export function LandingHero() {
                   animate={{ opacity: 1, filter: "blur(0px)" }}
                   exit={{ opacity: 0, filter: "blur(10px)" }}
                   transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                  className="absolute inset-x-0 font-sans text-3xl font-medium tracking-wide text-white uppercase"
+                  className="w-full text-center font-sans text-4xl font-medium tracking-[0.08em] whitespace-nowrap text-white uppercase md:text-5xl"
                 >
                   {HEADLINES[index]}
                 </motion.h1>
               </AnimatePresence>
-            </span>
-          </button>
+            </div>
+          </div>
 
-          <Button
-            nativeButton={false}
-            render={<Link href="/sign-in" />}
-            size="lg"
-            className="bg-white text-neutral-900 hover:bg-white/90"
+          <Link
+            href="/sign-in"
+            className={cn(
+              buttonVariants({ size: "lg" }),
+              "bg-white text-neutral-900 hover:bg-white/90 hover:text-neutral-900",
+            )}
           >
             Get Started
-          </Button>
+          </Link>
         </div>
       </div>
     </GradientCanvas>
