@@ -370,6 +370,27 @@ export const zeroCallStatusEnum = pgEnum("zero_call_status", [
   "blocked",
 ]);
 
+/** Per-org Zero payment session (device-login tokens, encrypted at rest). */
+export const zeroConnections = pgTable(
+  "zero_connections",
+  {
+    organizationId: text("organization_id")
+      .primaryKey()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    /** AES-GCM ciphertext of access token */
+    accessTokenEnc: text("access_token_enc").notNull(),
+    /** AES-GCM ciphertext of refresh token */
+    refreshTokenEnc: text("refresh_token_enc").notNull(),
+    zeroUserId: text("zero_user_id"),
+    zeroEmail: text("zero_email"),
+    walletAddress: text("wallet_address"),
+    /** When true, zeroCall uses live SDK instead of mocks for this org. */
+    liveEnabled: boolean("live_enabled").notNull().default(false),
+    connectedAt: timestamp("connected_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+);
+
 export const zeroCalls = pgTable(
   "zero_calls",
   {

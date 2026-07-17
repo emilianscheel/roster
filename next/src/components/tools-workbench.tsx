@@ -12,7 +12,13 @@ import {
   type ZeroToolCategory,
 } from "@/lib/zero-tools";
 
-export function ToolsWorkbench() {
+export function ToolsWorkbench({
+  initialTools = ZERO_TOOLS,
+  live = false,
+}: {
+  initialTools?: ZeroTool[];
+  live?: boolean;
+}) {
   const [query, setQuery] = useState("");
   const [categoryTab, setCategoryTab] = useState<string>("all");
   const [selected, setSelected] = useState<ZeroTool | null>(null);
@@ -23,7 +29,7 @@ export function ToolsWorkbench() {
     const category =
       categoryTab === "all" ? null : (categoryTab as ZeroToolCategory);
 
-    return ZERO_TOOLS.filter((tool) => {
+    return initialTools.filter((tool) => {
       if (category && tool.category !== category) return false;
       if (!q) return true;
       const haystack = [
@@ -38,7 +44,7 @@ export function ToolsWorkbench() {
         .toLowerCase();
       return haystack.includes(q);
     });
-  }, [query, categoryTab]);
+  }, [query, categoryTab, initialTools]);
 
   function openTool(tool: ZeroTool) {
     setSelected(tool);
@@ -47,7 +53,14 @@ export function ToolsWorkbench() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-semibold">Tools</h1>
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h1 className="text-lg font-semibold">Tools</h1>
+        <p className="text-xs text-muted-foreground">
+          {live
+            ? "Live from your Zero account"
+            : "Curated snapshot — connect Zero in Get started for live search"}
+        </p>
+      </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative min-w-0 flex-1">

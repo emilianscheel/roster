@@ -11,6 +11,7 @@ import {
   zeroCalls,
 } from "@/lib/db/schema";
 import type { NavItemId } from "@/lib/nav";
+import { getZeroConnection } from "@/lib/zero/connection";
 import { getZeroToolCount } from "@/lib/zero-tools";
 
 export type NavStats = Partial<Record<NavItemId, string>>;
@@ -83,8 +84,16 @@ export async function getGlobalNavStats(orgId: string): Promise<NavStats> {
     maxUtil = Math.max(maxUtil, Math.round((r.spentCents / r.budgetCents) * 100));
   }
 
+  const zeroConn = await getZeroConnection(orgId);
+  const onboardingBadge = !zeroConn
+    ? "Set up"
+    : zeroConn.liveEnabled
+      ? "Live"
+      : "Fund";
+
   return {
     home: String(pendingCount),
+    onboarding: onboardingBadge,
     roles: String(roleCount?.count ?? 0),
     people: String(peopleCount?.count ?? 0),
     approvals: String(pendingCount),

@@ -15,11 +15,13 @@ import {
   Mail,
   Trophy,
   Wrench,
+  Rocket,
 } from "lucide-react";
 
 export type NavItemId =
   | "home"
   | "new"
+  | "onboarding"
   | "roles"
   | "people"
   | "approvals"
@@ -45,6 +47,7 @@ export type NavItem = {
 
 export const globalNav: NavItem[] = [
   { id: "new", title: "New Role", href: "/new", icon: Plus },
+  { id: "onboarding", title: "Get started", href: "/get-started", icon: Rocket },
   { id: "home", title: "What to do?", href: "/", icon: LayoutDashboard },
   { id: "roles", title: "Roles", href: "/roles", icon: Briefcase },
   { id: "people", title: "People", href: "/people", icon: Users },
