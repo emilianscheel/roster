@@ -118,10 +118,19 @@ export function ApprovalFocus({ tasks }: { tasks: ApprovalTaskView[] }) {
         onCancelReform={() => setReformId(null)}
         onAct={act}
         onRemind={remind}
-        showSkip
-        onSkip={skip}
         expanded
       />
+
+      <div className="flex justify-center">
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={busy}
+          onClick={skip}
+        >
+          Skip
+        </Button>
+      </div>
     </div>
   );
 }

@@ -55,8 +55,6 @@ export function ApprovalCard({
   onCancelReform,
   onAct,
   onRemind,
-  showSkip,
-  onSkip,
   expanded,
 }: {
   task: ApprovalTaskView;
@@ -68,8 +66,6 @@ export function ApprovalCard({
   onCancelReform: () => void;
   onAct: (action: "allow" | "reject" | "reform", reformNotes?: string) => void;
   onRemind: (remindAt: Date) => void;
-  showSkip?: boolean;
-  onSkip?: () => void;
   expanded?: boolean;
 }) {
   const draft =
@@ -125,47 +121,41 @@ export function ApprovalCard({
           </div>
         </div>
       ) : (
-        <div className="mt-auto flex flex-wrap gap-2">
-          <Button
-            size="sm"
-            className="gap-1"
-            disabled={busy}
-            onClick={() => onAct("allow")}
-          >
-            <Check className="size-3.5" />
-            Allow
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className="gap-1"
-            disabled={busy}
-            onClick={() => onAct("reject")}
-          >
-            <X className="size-3.5" />
-            Reject
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="gap-1"
-            disabled={busy}
-            onClick={onStartReform}
-          >
-            <Pencil className="size-3.5" />
-            Reform
-          </Button>
-          {showSkip && onSkip ? (
+        <div className="mt-auto flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               size="sm"
-              variant="ghost"
+              className="gap-1"
               disabled={busy}
-              onClick={onSkip}
+              onClick={() => onAct("allow")}
             >
-              Skip
+              <Check className="size-3.5" />
+              Allow
             </Button>
-          ) : null}
-          <RemindLaterMenu disabled={busy} onRemind={onRemind} />
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1"
+              disabled={busy}
+              onClick={() => onAct("reject")}
+            >
+              <X className="size-3.5" />
+              Reject
+            </Button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1"
+              disabled={busy}
+              onClick={onStartReform}
+            >
+              <Pencil className="size-3.5" />
+              Reform
+            </Button>
+            <RemindLaterMenu disabled={busy} onRemind={onRemind} />
+          </div>
         </div>
       )}
     </div>
