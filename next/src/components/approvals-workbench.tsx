@@ -2,14 +2,22 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Check, Focus, Pencil, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { RemindLaterMenu } from "@/components/remind-later-menu";
+import {
+  isActivePending,
+  useApprovalActions,
+  type ApprovalAction,
+  patchApproval,
+} from "@/components/use-approval-actions";
 import type { ApprovalTaskView } from "@/lib/approvals";
+
+export type { ApprovalAction };
+export { isActivePending, patchApproval };
 
 const KIND_TABS = [
   { value: "all", label: "All", kind: null as string | null },
@@ -19,31 +27,6 @@ const KIND_TABS = [
   { value: "place_call", label: "Call", kind: "place_call" },
   { value: "budget_exceed", label: "Budget", kind: "budget_exceed" },
 ] as const;
-
-export type ApprovalAction = "allow" | "reject" | "reform" | "remind";
-
-export async function patchApproval(input: {
-  id: string;
-  action: ApprovalAction;
-  reformNotes?: string;
-  remindAt?: string;
-}) {
-  const res = await fetch("/api/approvals", {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(input),
-  });
-  if (!res.ok) {
-    throw new Error("Approval action failed");
-  }
-  return res.json();
-}
-
-export function isActivePending(task: ApprovalTaskView) {
-  if (task.status !== "pending") return false;
-  if (!task.remindAt) return true;
-  return new Date(task.remindAt).getTime() <= Date.now();
-}
 
 export function ApprovalCard({
   task,
@@ -162,23 +145,42 @@ export function ApprovalCard({
   );
 }
 
-export function ApprovalsWorkbench({ tasks }: { tasks: ApprovalTaskView[] }) {
-  const router = useRouter();
+export function ApprovalsWorkbench({
+  tasks,
+  title = "Approvals",
+  lockedKind,
+  showFocus = true,
+  emptyMessage = "No pending tasks",
+  searchPlaceholder = "Search approvals…",
+}: {
+  tasks: ApprovalTaskView[];
+  title?: string;
+  lockedKind?: string;
+  showFocus?: boolean;
+  emptyMessage?: string;
+  searchPlaceholder?: string;
+}) {
   const [query, setQuery] = useState("");
-  const [kindTab, setKindTab] = useState("all");
-  const [reformId, setReformId] = useState<string | null>(null);
-  const [notes, setNotes] = useState("");
-  const [busy, setBusy] = useState<string | null>(null);
+  const [kindTab, setKindTab] = useState(lockedKind ?? "all");
+  const {
+    busy,
+    reformId,
+    notes,
+    setNotes,
+    act,
+    remind,
+    startReform,
+    cancelReform,
+  } = useApprovalActions();
 
-  const pending = useMemo(
-    () => tasks.filter(isActivePending),
-    [tasks],
-  );
+  const pending = useMemo(() => tasks.filter(isActivePending), [tasks]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     const kind =
-      KIND_TABS.find((t) => t.value === kindTab)?.kind ?? null;
+      lockedKind ??
+      KIND_TABS.find((t) => t.value === kindTab)?.kind ??
+      null;
 
     return pending.filter((task) => {
       if (kind && task.kind !== kind) return false;
@@ -195,49 +197,22 @@ export function ApprovalsWorkbench({ tasks }: { tasks: ApprovalTaskView[] }) {
         .toLowerCase();
       return haystack.includes(q);
     });
-  }, [pending, query, kindTab]);
-
-  async function act(
-    id: string,
-    action: "allow" | "reject" | "reform",
-    reformNotes?: string,
-  ) {
-    setBusy(id);
-    try {
-      await patchApproval({ id, action, reformNotes });
-      setReformId(null);
-      router.refresh();
-    } finally {
-      setBusy(null);
-    }
-  }
-
-  async function remind(id: string, remindAt: Date) {
-    setBusy(id);
-    try {
-      await patchApproval({
-        id,
-        action: "remind",
-        remindAt: remindAt.toISOString(),
-      });
-      router.refresh();
-    } finally {
-      setBusy(null);
-    }
-  }
+  }, [pending, query, kindTab, lockedKind]);
 
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-lg font-semibold">Approvals</h1>
-        <Button
-          nativeButton={false}
-          render={<Link href="/approvals/focus" />}
-          className="gap-1.5 self-start sm:self-auto"
-        >
-          <Focus className="size-4" />
-          Let&apos;s focus
-        </Button>
+        <h1 className="text-lg font-semibold">{title}</h1>
+        {showFocus ? (
+          <Button
+            nativeButton={false}
+            render={<Link href="/approvals/focus" />}
+            className="gap-1.5 self-start sm:self-auto"
+          >
+            <Focus className="size-4" />
+            Let&apos;s focus
+          </Button>
+        ) : null}
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -246,28 +221,30 @@ export function ApprovalsWorkbench({ tasks }: { tasks: ApprovalTaskView[] }) {
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search approvals…"
+            placeholder={searchPlaceholder}
             className="pl-8"
           />
         </div>
-        <Tabs
-          value={kindTab}
-          onValueChange={setKindTab}
-          className="shrink-0"
-        >
-          <TabsList className="max-w-full overflow-x-auto">
-            {KIND_TABS.map((tab) => (
-              <TabsTrigger key={tab.value} value={tab.value}>
-                {tab.label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
+        {!lockedKind ? (
+          <Tabs
+            value={kindTab}
+            onValueChange={setKindTab}
+            className="shrink-0"
+          >
+            <TabsList className="max-w-full overflow-x-auto">
+              {KIND_TABS.map((tab) => (
+                <TabsTrigger key={tab.value} value={tab.value}>
+                  {tab.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+        ) : null}
       </div>
 
       {!filtered.length ? (
         <div className="flex h-40 items-center justify-center text-sm text-muted-foreground">
-          No pending tasks
+          {emptyMessage}
         </div>
       ) : (
         <div className="grid items-stretch gap-3 md:grid-cols-2">
@@ -279,11 +256,8 @@ export function ApprovalsWorkbench({ tasks }: { tasks: ApprovalTaskView[] }) {
               reformId={reformId}
               notes={notes}
               onNotesChange={setNotes}
-              onStartReform={() => {
-                setReformId(task.id);
-                setNotes("");
-              }}
-              onCancelReform={() => setReformId(null)}
+              onStartReform={() => startReform(task.id)}
+              onCancelReform={cancelReform}
               onAct={(action, reformNotes) =>
                 act(task.id, action, reformNotes)
               }

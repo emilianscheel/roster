@@ -1,4 +1,4 @@
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, lte, or, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
   approvalTasks,
@@ -116,37 +116,49 @@ export async function getRoleNavStats(
 
   if (!role) return null;
 
+  const now = new Date();
   const cands = await db
     .select({
       id: candidates.id,
       stage: candidates.stage,
-      outreachDraft: candidates.outreachDraft,
     })
     .from(candidates)
     .where(eq(candidates.roleId, roleId));
 
   const candIds = cands.map((c) => c.id);
 
-  const [[reqCount], [callCount], evidenceRows] = await Promise.all([
-    db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(roleRequirements)
-      .where(eq(roleRequirements.roleId, roleId)),
-    db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(zeroCalls)
-      .where(
-        and(eq(zeroCalls.organizationId, orgId), eq(zeroCalls.roleId, roleId)),
-      ),
-    candIds.length === 0
-      ? Promise.resolve([{ count: 0 }])
-      : db
-          .select({ count: sql<number>`count(*)::int` })
-          .from(evidence)
-          .where(inArray(evidence.candidateId, candIds)),
-  ]);
+  const [[reqCount], [callCount], evidenceRows, [outreachPending]] =
+    await Promise.all([
+      db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(roleRequirements)
+        .where(eq(roleRequirements.roleId, roleId)),
+      db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(zeroCalls)
+        .where(
+          and(eq(zeroCalls.organizationId, orgId), eq(zeroCalls.roleId, roleId)),
+        ),
+      candIds.length === 0
+        ? Promise.resolve([{ count: 0 }])
+        : db
+            .select({ count: sql<number>`count(*)::int` })
+            .from(evidence)
+            .where(inArray(evidence.candidateId, candIds)),
+      db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(approvalTasks)
+        .where(
+          and(
+            eq(approvalTasks.organizationId, orgId),
+            eq(approvalTasks.roleId, roleId),
+            eq(approvalTasks.kind, "send_outreach"),
+            eq(approvalTasks.status, "pending"),
+            or(isNull(approvalTasks.remindAt), lte(approvalTasks.remindAt, now)),
+          ),
+        ),
+    ]);
 
-  const outreachCount = cands.filter((c) => c.outreachDraft).length;
   const outcomesCount = cands.filter((c) =>
     ["contacted", "replied", "interview", "rejected"].includes(c.stage),
   ).length;
@@ -157,7 +169,7 @@ export async function getRoleNavStats(
     live: String(calls),
     pipeline: String(cands.length),
     evidence: String(evidenceRows[0]?.count ?? 0),
-    outreach: String(outreachCount),
+    outreach: String(outreachPending?.count ?? 0),
     outcomes: String(outcomesCount),
     "role-arena": String(calls),
     "role-spend": formatCents(role.spentCents),

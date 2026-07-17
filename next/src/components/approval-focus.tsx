@@ -2,23 +2,28 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ApprovalCard } from "@/components/approvals-workbench";
 import {
-  ApprovalCard,
   isActivePending,
-  patchApproval,
-} from "@/components/approvals-workbench";
+  useApprovalActions,
+} from "@/components/use-approval-actions";
 import type { ApprovalTaskView } from "@/lib/approvals";
 
 export function ApprovalFocus({ tasks }: { tasks: ApprovalTaskView[] }) {
-  const router = useRouter();
   const pending = useMemo(() => tasks.filter(isActivePending), [tasks]);
   const [skippedIds, setSkippedIds] = useState<Set<string>>(new Set());
-  const [reformId, setReformId] = useState<string | null>(null);
-  const [notes, setNotes] = useState("");
-  const [busy, setBusy] = useState(false);
+  const {
+    busy,
+    reformId,
+    notes,
+    setNotes,
+    act,
+    remind,
+    startReform,
+    cancelReform,
+  } = useApprovalActions();
 
   const queue = useMemo(
     () => pending.filter((t) => !skippedIds.has(t.id)),
@@ -28,44 +33,10 @@ export function ApprovalFocus({ tasks }: { tasks: ApprovalTaskView[] }) {
   const current = queue[0] ?? null;
   const remaining = queue.length;
 
-  async function act(
-    action: "allow" | "reject" | "reform",
-    reformNotes?: string,
-  ) {
-    if (!current) return;
-    setBusy(true);
-    try {
-      await patchApproval({ id: current.id, action, reformNotes });
-      setReformId(null);
-      setNotes("");
-      router.refresh();
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function remind(remindAt: Date) {
-    if (!current) return;
-    setBusy(true);
-    try {
-      await patchApproval({
-        id: current.id,
-        action: "remind",
-        remindAt: remindAt.toISOString(),
-      });
-      setReformId(null);
-      setNotes("");
-      router.refresh();
-    } finally {
-      setBusy(false);
-    }
-  }
-
   function skip() {
     if (!current) return;
     setSkippedIds((prev) => new Set(prev).add(current.id));
-    setReformId(null);
-    setNotes("");
+    cancelReform();
   }
 
   if (!current) {
@@ -107,17 +78,14 @@ export function ApprovalFocus({ tasks }: { tasks: ApprovalTaskView[] }) {
 
       <ApprovalCard
         task={current}
-        busy={busy}
+        busy={busy === current.id}
         reformId={reformId}
         notes={notes}
         onNotesChange={setNotes}
-        onStartReform={() => {
-          setReformId(current.id);
-          setNotes("");
-        }}
-        onCancelReform={() => setReformId(null)}
-        onAct={act}
-        onRemind={remind}
+        onStartReform={() => startReform(current.id)}
+        onCancelReform={cancelReform}
+        onAct={(action, reformNotes) => act(current.id, action, reformNotes)}
+        onRemind={(remindAt) => remind(current.id, remindAt)}
         expanded
       />
 
@@ -125,7 +93,7 @@ export function ApprovalFocus({ tasks }: { tasks: ApprovalTaskView[] }) {
         <Button
           size="sm"
           variant="ghost"
-          disabled={busy}
+          disabled={busy === current.id}
           onClick={skip}
         >
           Skip

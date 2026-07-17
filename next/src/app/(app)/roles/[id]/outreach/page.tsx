@@ -1,8 +1,10 @@
 import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
+import { ApprovalsWorkbench } from "@/components/approvals-workbench";
 import { requireSession } from "@/lib/auth/session";
+import { loadApprovalTasks } from "@/lib/approvals";
 import { db } from "@/lib/db";
-import { candidates, roles } from "@/lib/db/schema";
+import { roles } from "@/lib/db/schema";
 
 export default async function OutreachPage({
   params,
@@ -14,29 +16,19 @@ export default async function OutreachPage({
   const [role] = await db.select().from(roles).where(eq(roles.id, id)).limit(1);
   if (!role || role.organizationId !== orgId) notFound();
 
-  const drafts = await db
-    .select()
-    .from(candidates)
-    .where(eq(candidates.roleId, id));
-
-  const withDraft = drafts.filter((c) => c.outreachDraft);
+  const tasks = await loadApprovalTasks(orgId, {
+    roleId: id,
+    kind: "send_outreach",
+  });
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-lg font-semibold">Outreach</h1>
-      {withDraft.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No drafts</p>
-      ) : (
-        withDraft.map((c) => (
-          <div key={c.id} className="space-y-2 rounded-lg border border-border p-4">
-            <div className="font-medium">{c.name}</div>
-            <pre className="whitespace-pre-wrap text-sm text-muted-foreground">
-              {c.outreachDraft}
-            </pre>
-            <div className="text-xs text-muted-foreground">{c.currentAction}</div>
-          </div>
-        ))
-      )}
-    </div>
+    <ApprovalsWorkbench
+      tasks={tasks}
+      title="Outreach"
+      lockedKind="send_outreach"
+      showFocus={false}
+      emptyMessage="No pending outreach"
+      searchPlaceholder="Search outreach…"
+    />
   );
 }

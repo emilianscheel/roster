@@ -16,8 +16,21 @@ export type ApprovalTaskView = {
   createdAt: string;
 };
 
+export type ApprovalKind =
+  | "unlock_contact"
+  | "send_outreach"
+  | "start_followup"
+  | "place_call"
+  | "budget_exceed";
+
+export type LoadApprovalTasksOptions = {
+  roleId?: string;
+  kind?: ApprovalKind;
+};
+
 export async function loadApprovalTasks(
   orgId: string,
+  options?: LoadApprovalTasksOptions,
 ): Promise<ApprovalTaskView[]> {
   const now = new Date();
   const rows = await db
@@ -41,6 +54,8 @@ export async function loadApprovalTasks(
       and(
         eq(approvalTasks.organizationId, orgId),
         or(isNull(approvalTasks.remindAt), lte(approvalTasks.remindAt, now)),
+        options?.roleId ? eq(approvalTasks.roleId, options.roleId) : undefined,
+        options?.kind ? eq(approvalTasks.kind, options.kind) : undefined,
       ),
     );
 
