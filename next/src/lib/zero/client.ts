@@ -3,17 +3,18 @@ import { db } from "@/lib/db";
 import { approvalTasks, roles, zeroCalls } from "@/lib/db/schema";
 import { isOrgZeroLive } from "@/lib/zero/connection";
 import {
+  ACTION_CAPABILITIES,
+  DEMO_SERVICES,
+  listDemoCapabilities,
+  mockResearchData,
+} from "@/lib/zero/mock-research";
+import {
   centsToMaxPay,
   getOrgZeroClient,
   usdToLedgerDollars,
 } from "@/lib/zero/sdk";
 
-export const ACTION_CAPABILITIES = new Set([
-  "contact.unlock",
-  "outreach.email",
-  "outreach.followup",
-  "outreach.call",
-]);
+export { ACTION_CAPABILITIES, listDemoCapabilities };
 
 export type ZeroCallInput = {
   organizationId: string;
@@ -36,160 +37,8 @@ export type ZeroCallResult = {
   approvalTaskId?: string;
 };
 
-const DEMO_SERVICES = [
-  {
-    service: "profile-scraper",
-    capability: "profile.extract",
-    quotedCents: 0.2,
-  },
-  {
-    service: "person-enrichment",
-    capability: "person.enrich",
-    quotedCents: 0.8,
-  },
-  {
-    service: "targeted-search",
-    capability: "web.search",
-    quotedCents: 0.7,
-  },
-  {
-    service: "github-signals",
-    capability: "github.activity",
-    quotedCents: 0.5,
-  },
-  {
-    service: "contact-enrichment",
-    capability: "contact.unlock",
-    quotedCents: 2.5,
-  },
-  {
-    service: "outreach-mail",
-    capability: "outreach.email",
-    quotedCents: 1.0,
-  },
-];
-
 function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
-}
-
-function mockResearchData(input: ZeroCallInput) {
-  const seed = (input.query || input.purpose || "candidate").slice(0, 40);
-  if (
-    input.capability.includes("discover") ||
-    input.capability === "zero.discover"
-  ) {
-    return {
-      services: DEMO_SERVICES.filter(
-        (s) => !ACTION_CAPABILITIES.has(s.capability),
-      ),
-    };
-  }
-  if (
-    input.capability.includes("search") ||
-    input.capability === "profile.extract"
-  ) {
-    return {
-      candidates: [
-        {
-          name: "Alex Rivera",
-          headline: "Staff Infrastructure Engineer · Rust / K8s",
-          strongestSignal: "Maintains production Rust networking crate",
-          freshnessDays: 12,
-        },
-        {
-          name: "Jordan Lee",
-          headline: "Founding Platform Engineer",
-          strongestSignal: "Recent OSS Kubernetes operator commits",
-          freshnessDays: 8,
-        },
-        {
-          name: "Sam Okonkwo",
-          headline: "SRE → infra transition",
-          strongestSignal: "Conference talk on production Rust services",
-          freshnessDays: 21,
-        },
-      ],
-      query: seed,
-    };
-  }
-  if (input.capability.includes("enrich") || input.capability.includes("github")) {
-    const slug =
-      seed
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, ".")
-        .replace(/^\.+|\.+$/g, "")
-        .slice(0, 32) || "candidate";
-    return {
-      profile: {
-        email: `${slug.split(".")[0] || "alex"}@example.com`,
-        headline: "Staff Software Engineer · Distributed systems",
-        location: "San Francisco Bay Area",
-        links: {
-          linkedin: `https://www.linkedin.com/in/${slug}`,
-          github: `https://github.com/${slug.replace(/\./g, "")}`,
-          twitter: `https://x.com/${slug.replace(/\./g, "")}`,
-        },
-        experiences: [
-          {
-            companyName: "Stripe",
-            companyDomain: "stripe.com",
-            title: "Staff Software Engineer",
-            startDate: "2022-04",
-            endDate: null,
-            isCurrent: true,
-            description:
-              "Owns multi-region reliability for payments orchestration.",
-          },
-          {
-            companyName: "Datadog",
-            companyDomain: "datadoghq.com",
-            title: "Senior Software Engineer",
-            startDate: "2019-01",
-            endDate: "2022-03",
-            isCurrent: false,
-            description: "High-cardinality metrics ingestion pipelines.",
-          },
-        ],
-        education: [
-          {
-            schoolName: "Carnegie Mellon University",
-            schoolDomain: "cmu.edu",
-            degree: "B.S.",
-            field: "Computer Science",
-            startDate: "2012",
-            endDate: "2016",
-            description: null,
-          },
-        ],
-        skills: ["Rust", "Go", "Kubernetes", "PostgreSQL"],
-        summary: `Demo enrichment for ${seed}`,
-      },
-      claims: [
-        {
-          label: "Production Rust",
-          status: "verified",
-          sources: ["GitHub rust-net repo", "Employer engineering blog"],
-          confidence: 0.94,
-        },
-        {
-          label: "Kubernetes",
-          status: "verified",
-          sources: ["K8s operator commits (60d)"],
-          confidence: 0.91,
-        },
-        {
-          label: "Open to opportunities",
-          status: "uncertain",
-          supporting: "Recent departure signal",
-          contradicting: "Personal site says not considering roles",
-          confidence: 0.48,
-        },
-      ],
-      subject: seed,
-    };
-  }
-  return { ok: true, note: `Demo result for ${input.capability}`, query: seed };
 }
 
 function evidenceFromData(data: unknown): number {
@@ -624,6 +473,3 @@ export async function zeroCall(input: ZeroCallInput): Promise<ZeroCallResult> {
   };
 }
 
-export function listDemoCapabilities() {
-  return DEMO_SERVICES;
-}
