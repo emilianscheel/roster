@@ -66,13 +66,6 @@ export function TakeActionChat({
   return (
     <div className="-m-4 flex h-full min-h-0 flex-1 flex-col overflow-hidden md:-m-6">
       <div className="mx-auto flex h-full w-full max-w-3xl min-h-0 flex-1 flex-col px-4 md:px-6">
-        <header className="shrink-0 border-b py-4">
-          <h1 className="font-instrument text-2xl tracking-tight">Take action</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Follow up on this role — search, verify, unlock, and outreach via Zero.
-          </p>
-        </header>
-
         <div className="flex-1 space-y-6 overflow-y-auto py-6">
           {messages.length === 0 && busy ? (
             <div className="text-muted-foreground flex items-center gap-2 text-sm">
@@ -108,7 +101,7 @@ export function TakeActionChat({
           <div ref={bottomRef} />
         </div>
 
-        <div className="bg-background sticky bottom-0 shrink-0 border-t py-4">
+        <div className="bg-background sticky bottom-0 shrink-0 py-4">
           <PromptComposer
             value={input}
             onChange={setInput}

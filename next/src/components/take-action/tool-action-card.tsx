@@ -1,14 +1,19 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
+import { useState } from "react";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Loader2, CheckCircle2, ShieldAlert, XCircle } from "lucide-react";
+  BookOpen,
+  ChevronRight,
+  ListChecks,
+  Loader2,
+  Mail,
+  Search,
+  ShieldCheck,
+  Sparkles,
+  Wrench,
+  type LucideIcon,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export type ToolActionStatus = "running" | "done" | "needs_approval" | "error";
 
@@ -19,6 +24,16 @@ type ToolActionCardProps = {
   detail?: string;
 };
 
+const TOOL_ICONS: Record<string, LucideIcon> = {
+  compileClaims: ListChecks,
+  discoverZeroServices: Sparkles,
+  searchCandidates: Search,
+  verifyCandidate: ShieldCheck,
+  proposeOutreach: Mail,
+  distillKnowledge: BookOpen,
+  callZeroService: Sparkles,
+};
+
 function humanizeToolName(name: string) {
   return name
     .replace(/([a-z])([A-Z])/g, "$1 $2")
@@ -26,36 +41,16 @@ function humanizeToolName(name: string) {
     .replace(/^\w/, (c) => c.toUpperCase());
 }
 
-function statusBadge(status: ToolActionStatus) {
+function statusLabel(status: ToolActionStatus): string | null {
   switch (status) {
     case "running":
-      return (
-        <Badge variant="secondary" className="gap-1">
-          <Loader2 className="size-3 animate-spin" />
-          Running
-        </Badge>
-      );
+      return "Running";
     case "needs_approval":
-      return (
-        <Badge variant="outline" className="gap-1">
-          <ShieldAlert className="size-3" />
-          Needs approval
-        </Badge>
-      );
+      return "Needs approval";
     case "error":
-      return (
-        <Badge variant="destructive" className="gap-1">
-          <XCircle className="size-3" />
-          Failed
-        </Badge>
-      );
+      return "Failed";
     default:
-      return (
-        <Badge variant="secondary" className="gap-1">
-          <CheckCircle2 className="size-3" />
-          Done
-        </Badge>
-      );
+      return null;
   }
 }
 
@@ -65,27 +60,63 @@ export function ToolActionCard({
   summary,
   detail,
 }: ToolActionCardProps) {
+  const [open, setOpen] = useState(false);
+  const Icon = TOOL_ICONS[name] ?? Wrench;
+  const label = humanizeToolName(name);
+  const nonDoneStatus = statusLabel(status);
+  const hasDetails = Boolean(summary || detail || nonDoneStatus);
+
   return (
-    <Card size="sm" className="bg-muted/30 ring-border/60">
-      <CardHeader className="flex-row items-start justify-between gap-3 space-y-0">
-        <div className="min-w-0 space-y-0.5">
-          <CardTitle className="truncate text-sm font-medium">
-            {humanizeToolName(name)}
-          </CardTitle>
-          {summary ? (
-            <CardDescription className="line-clamp-2 text-xs">
-              {summary}
-            </CardDescription>
-          ) : null}
+    <div className="w-full max-w-sm">
+      <button
+        type="button"
+        className={cn(
+          "group flex w-full items-center rounded-sm py-0.5 text-left",
+          "text-muted-foreground transition-colors",
+          hasDetails && "hover:text-foreground",
+          !hasDetails && "cursor-default",
+        )}
+        aria-expanded={hasDetails ? open : undefined}
+        disabled={!hasDetails}
+        onClick={() => {
+          if (!hasDetails) return;
+          setOpen((v) => !v);
+        }}
+      >
+        {status === "running" ? (
+          <Loader2 className="size-3.5 shrink-0 animate-spin" />
+        ) : (
+          <Icon className="size-3.5 shrink-0" />
+        )}
+        <span className="ml-2 min-w-0 truncate text-xs font-medium">{label}</span>
+        {hasDetails ? (
+          <ChevronRight
+            className={cn(
+              "ml-1.5 size-3.5 shrink-0 opacity-0 transition-all",
+              "group-hover:opacity-100",
+              open && "rotate-90 opacity-100",
+            )}
+          />
+        ) : null}
+      </button>
+
+      {hasDetails ? (
+        <div
+          className={cn(
+            "grid transition-[grid-template-rows] duration-200 ease-out",
+            open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+          )}
+        >
+          <div className="overflow-hidden">
+            <div className="text-muted-foreground space-y-1 pt-1.5 pl-6 text-xs">
+              {nonDoneStatus ? <p>{nonDoneStatus}</p> : null}
+              {summary ? <p>{summary}</p> : null}
+              {detail ? <p>{detail}</p> : null}
+            </div>
+          </div>
         </div>
-        {statusBadge(status)}
-      </CardHeader>
-      {detail ? (
-        <CardContent>
-          <p className="text-muted-foreground line-clamp-3 text-xs">{detail}</p>
-        </CardContent>
       ) : null}
-    </Card>
+    </div>
   );
 }
 

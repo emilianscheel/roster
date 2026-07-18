@@ -37,13 +37,6 @@ export function ChatMessage({ message }: ChatMessageProps) {
       >
         <div
           className={cn(
-            "text-muted-foreground text-[11px] font-medium tracking-wide uppercase",
-          )}
-        >
-          {isUser ? "You" : "Roster"}
-        </div>
-        <div
-          className={cn(
             "w-full space-y-2 text-[15px] leading-relaxed",
             isUser
               ? "bg-muted/50 rounded-2xl px-4 py-3"
