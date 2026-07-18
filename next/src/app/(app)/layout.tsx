@@ -15,7 +15,10 @@ export default async function AppLayout({
   return (
     <SidebarProvider className="h-svh max-h-svh overflow-hidden">
       <CommandMenuProvider>
-        <AppSidebar globalStats={globalStats} />
+        <AppSidebar
+          globalStats={globalStats}
+          zeroConfigured={globalStats.onboarding !== "Set up"}
+        />
         <SidebarInset className="min-h-0 overflow-hidden">
           <div className="flex h-full min-h-0 flex-1 flex-col overflow-y-auto p-4 md:p-6">
             {children}

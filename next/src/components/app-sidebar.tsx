@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
-import { ChevronLeft, LogOut, Search } from "lucide-react";
+import { ChevronLeft, LogOut, Search, Wallet } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -28,9 +28,13 @@ import { useCommandMenu } from "@/components/command-menu";
 
 type AppSidebarProps = {
   globalStats: NavStats;
+  zeroConfigured?: boolean;
 };
 
-export function AppSidebar({ globalStats }: AppSidebarProps) {
+export function AppSidebar({
+  globalStats,
+  zeroConfigured = false,
+}: AppSidebarProps) {
   const pathname = usePathname();
   const roleMatch = pathname.match(/^\/roles\/([^/]+)/);
   const roleId = roleMatch?.[1];
@@ -153,14 +157,20 @@ export function AppSidebar({ globalStats }: AppSidebarProps) {
                   </SidebarMenuItem>
                   {items
                     .filter((item) => item.id !== "new")
-                    .map((item) => (
-                      <NavMenuItem
-                        key={item.href}
-                        item={item}
-                        pathname={pathname}
-                        stat={stats[item.id]}
-                      />
-                    ))}
+                    .map((item) => {
+                      const isWallet =
+                        item.id === "onboarding" && zeroConfigured;
+                      return (
+                        <NavMenuItem
+                          key={item.href}
+                          item={item}
+                          title={isWallet ? "Wallet" : undefined}
+                          icon={isWallet ? Wallet : undefined}
+                          pathname={pathname}
+                          stat={stats[item.id]}
+                        />
+                      );
+                    })}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
@@ -194,13 +204,19 @@ export function AppSidebar({ globalStats }: AppSidebarProps) {
 
 function NavMenuItem({
   item,
+  title,
+  icon: IconOverride,
   pathname,
   stat,
 }: {
   item: NavItem;
+  title?: string;
+  icon?: NavItem["icon"];
   pathname: string;
   stat?: string;
 }) {
+  const label = title ?? item.title;
+  const Icon = IconOverride ?? item.icon;
   const active =
     item.href === "/home"
       ? pathname === "/home"
@@ -211,10 +227,10 @@ function NavMenuItem({
       <SidebarMenuButton
         render={<Link href={item.href} />}
         isActive={active}
-        tooltip={item.title}
+        tooltip={label}
       >
-        <item.icon />
-        <span>{item.title}</span>
+        <Icon />
+        <span>{label}</span>
       </SidebarMenuButton>
       {stat != null ? (
         <SidebarMenuBadge className="text-muted-foreground font-normal">

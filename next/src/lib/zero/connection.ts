@@ -55,7 +55,7 @@ export function isGlobalDemoMode() {
 export async function isOrgZeroLive(organizationId: string): Promise<boolean> {
   if (isGlobalDemoMode()) return false;
   const row = await getZeroConnection(organizationId);
-  return Boolean(row?.liveEnabled);
+  return Boolean(row);
 }
 
 export async function saveZeroConnection(input: {

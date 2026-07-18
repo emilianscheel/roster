@@ -85,15 +85,10 @@ export async function getGlobalNavStats(orgId: string): Promise<NavStats> {
   }
 
   const zeroConn = await getZeroConnection(orgId);
-  const onboardingBadge = !zeroConn
-    ? "Set up"
-    : zeroConn.liveEnabled
-      ? "Live"
-      : "Fund";
 
   return {
     home: String(pendingCount),
-    onboarding: onboardingBadge,
+    ...(zeroConn ? {} : { onboarding: "Set up" }),
     roles: String(roleCount?.count ?? 0),
     people: String(peopleCount?.count ?? 0),
     approvals: String(pendingCount),
