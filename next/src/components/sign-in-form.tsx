@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
 import { readLastEmail, writeLastEmail } from "@/lib/auth/last-email";
 import { Button } from "@/components/ui/button";
@@ -111,7 +112,12 @@ export function SignInForm() {
 
     return (
         <div className="mx-auto flex w-full max-w-sm flex-col gap-5">
-            <h1 className="font-instrument text-2xl tracking-tight">Roster</h1>
+            <Link
+                href="/"
+                className="select-none font-instrument text-2xl tracking-tight"
+            >
+                Roster
+            </Link>
             {!hostOk ? (
                 <p className="text-center text-sm text-destructive">
                     Use http://localhost:3000 (not a LAN IP) for passkeys in Safari.

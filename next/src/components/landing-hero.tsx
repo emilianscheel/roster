@@ -42,9 +42,12 @@ export function LandingHero() {
   return (
     <GradientCanvas className="h-svh overflow-hidden">
       <div className="relative flex h-full w-full flex-col items-center overflow-hidden text-white">
-        <p className="absolute top-12 left-1/2 -translate-x-1/2 font-instrument text-3xl tracking-tight text-white md:top-14 md:text-4xl">
+        <Link
+          href="/"
+          className="absolute top-12 left-1/2 -translate-x-1/2 select-none font-instrument text-3xl tracking-tight text-white md:top-14 md:text-4xl"
+        >
           Roster
-        </p>
+        </Link>
 
         <div className="flex w-full max-w-5xl flex-1 flex-col items-center justify-center gap-10 px-6">
           <div
@@ -52,13 +55,13 @@ export function LandingHero() {
             onClick={advance}
             className="w-full cursor-pointer text-center text-white select-none"
           >
-            <div className="relative flex min-h-14 w-full items-center justify-center">
+            <div className="relative flex min-h-14 w-full items-center justify-center overflow-hidden">
               <AnimatePresence mode="wait">
                 <motion.h1
                   key={HEADLINES[index]}
-                  initial={{ opacity: 0, filter: "blur(10px)" }}
-                  animate={{ opacity: 1, filter: "blur(0px)" }}
-                  exit={{ opacity: 0, filter: "blur(10px)" }}
+                  initial={{ opacity: 0, filter: "blur(10px)", y: 18 }}
+                  animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
+                  exit={{ opacity: 0, filter: "blur(10px)", y: -18 }}
                   transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
                   className="w-full text-center font-sans text-3xl font-medium tracking-normal whitespace-nowrap text-white uppercase md:text-4xl"
                 >
