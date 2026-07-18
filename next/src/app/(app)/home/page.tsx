@@ -262,7 +262,7 @@ export default async function CommandPage() {
                 {t.helper}
               </CardDescription>
             </CardContent>
-            <div className="mt-auto flex flex-col items-stretch gap-2.5 px-(--card-spacing)">
+            <div className="mt-auto flex flex-col items-stretch gap-4 px-(--card-spacing)">
               {t.examples.map((ex) => (
                 <Link
                   key={ex.label}
