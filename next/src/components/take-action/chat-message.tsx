@@ -1,7 +1,10 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import type { UIMessage } from "ai";
 import { isToolUIPart, getToolName } from "ai";
+import { Check, Copy } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   ToolActionCard,
@@ -19,8 +22,52 @@ function toolNameFromPart(part: UIMessage["parts"][number]): string | null {
   return null;
 }
 
+function messageText(message: UIMessage): string {
+  return message.parts
+    .filter((part): part is { type: "text"; text: string } => part.type === "text")
+    .map((part) => part.text)
+    .join("\n")
+    .trim();
+}
+
+function formatShortTime(iso: string): string | null {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+}
+
+function createdAtFromMessage(message: UIMessage): string | null {
+  const meta = message.metadata;
+  if (!meta || typeof meta !== "object") return null;
+  const createdAt = (meta as { createdAt?: unknown }).createdAt;
+  return typeof createdAt === "string" ? createdAt : null;
+}
+
 export function ChatMessage({ message }: ChatMessageProps) {
   const isUser = message.role === "user";
+  const [copied, setCopied] = useState(false);
+  const copiedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const createdAt = createdAtFromMessage(message);
+  const shortTime = createdAt ? formatShortTime(createdAt) : null;
+  const text = messageText(message);
+
+  useEffect(() => {
+    return () => {
+      if (copiedTimer.current) clearTimeout(copiedTimer.current);
+    };
+  }, []);
+
+  async function copyText() {
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      if (copiedTimer.current) clearTimeout(copiedTimer.current);
+      copiedTimer.current = setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // ignore clipboard failures
+    }
+  }
 
   return (
     <div
@@ -31,8 +78,8 @@ export function ChatMessage({ message }: ChatMessageProps) {
     >
       <div
         className={cn(
-          "flex w-full max-w-[46rem] flex-col gap-2",
-          isUser ? "items-end" : "items-start",
+          "flex w-full max-w-[46rem] flex-col",
+          isUser ? "group/msg items-end gap-1" : "items-start gap-2",
         )}
       >
         <div
@@ -94,6 +141,30 @@ export function ChatMessage({ message }: ChatMessageProps) {
             );
           })}
         </div>
+
+        {isUser ? (
+          <div className="flex items-center gap-0.5 pr-0.5">
+            {shortTime ? (
+              <span className="text-muted-foreground px-1 text-[11px] tabular-nums">
+                {shortTime}
+              </span>
+            ) : null}
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-xs"
+              className={cn(
+                "text-muted-foreground opacity-0 transition-opacity duration-150",
+                "group-hover/msg:opacity-100 focus-visible:opacity-100",
+              )}
+              aria-label={copied ? "Copied" : "Copy message"}
+              disabled={!text}
+              onClick={() => void copyText()}
+            >
+              {copied ? <Check /> : <Copy />}
+            </Button>
+          </div>
+        ) : null}
       </div>
     </div>
   );

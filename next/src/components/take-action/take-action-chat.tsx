@@ -49,7 +49,10 @@ export function TakeActionChat({
     }
     if (!brief.trim()) return;
     startedRef.current = true;
-    void sendMessage({ text: brief.trim() });
+    void sendMessage({
+      text: brief.trim(),
+      metadata: { createdAt: new Date().toISOString() },
+    });
   }, [brief, initialMessages.length, sendMessage]);
 
   useEffect(() => {
@@ -60,7 +63,10 @@ export function TakeActionChat({
     const text = input.trim();
     if (!text || busy) return;
     setInput("");
-    await sendMessage({ text });
+    await sendMessage({
+      text,
+      metadata: { createdAt: new Date().toISOString() },
+    });
   }
 
   return (
