@@ -246,29 +246,31 @@ export default async function CommandPage() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-6">
-      <h1 className="text-lg font-semibold">What to do?</h1>
+      <h1 className="text-lg font-semibold">Learn</h1>
       <div className="grid flex-1 auto-rows-fr gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {tiles.map((t) => (
-          <Card key={t.label} className="h-full">
+          <Card key={t.label} className="group h-full">
             <CardHeader className="flex flex-row items-center gap-2 space-y-0">
               <t.icon className="size-5 text-muted-foreground" />
               <CardTitle>{t.label}</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-1 flex-col gap-1">
-              <div className="text-3xl font-semibold tabular-nums tracking-tight sm:text-4xl">
+              <div className="text-5xl font-semibold tabular-nums tracking-tight sm:text-6xl">
                 {t.value}
               </div>
-              <CardDescription>{t.helper}</CardDescription>
+              <CardDescription className="opacity-0 transition-opacity group-hover:opacity-100">
+                {t.helper}
+              </CardDescription>
             </CardContent>
             <div className="mt-auto flex flex-col items-stretch gap-2.5 px-(--card-spacing)">
               {t.examples.map((ex) => (
                 <Link
                   key={ex.label}
                   href={ex.href}
-                  className="group flex items-center gap-3 rounded-xl px-4 py-3 text-left transition-colors hover:bg-muted"
+                  className="group/action flex items-center gap-3 rounded-xl text-left transition-colors hover:text-black"
                 >
-                  <ex.icon className="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
-                  <span className="truncate text-sm text-muted-foreground transition-colors group-hover:text-foreground">
+                  <ex.icon className="size-4 shrink-0 text-muted-foreground transition-colors group-hover/action:text-black" />
+                  <span className="truncate text-sm text-muted-foreground transition-colors group-hover/action:text-black">
                     {ex.label}
                   </span>
                 </Link>

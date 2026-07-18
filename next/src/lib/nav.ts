@@ -1,6 +1,6 @@
 import type { ComponentType } from "react";
 import {
-  LayoutDashboard,
+  GraduationCap,
   Plus,
   Briefcase,
   Users,
@@ -50,7 +50,6 @@ export type NavItem = {
 export const globalNav: NavItem[] = [
   { id: "new", title: "New Role", href: "/new", icon: Plus },
   { id: "onboarding", title: "Get started", href: "/get-started", icon: Rocket },
-  { id: "home", title: "What to do?", href: "/home", icon: LayoutDashboard },
   { id: "roles", title: "Roles", href: "/roles", icon: Briefcase },
   { id: "people", title: "People", href: "/people", icon: Users },
   { id: "approvals", title: "Approvals", href: "/approvals", icon: ShieldCheck },
@@ -58,6 +57,7 @@ export const globalNav: NavItem[] = [
   { id: "arena", title: "Arena", href: "/arena", icon: Swords },
   { id: "spend", title: "Spend", href: "/spend", icon: Wallet },
   { id: "knowledge", title: "Best Practices", href: "/knowledge", icon: BookOpen },
+  { id: "home", title: "Learn", href: "/home", icon: GraduationCap },
 ];
 
 export function roleNav(roleId: string): NavItem[] {
